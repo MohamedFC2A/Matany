@@ -1492,8 +1492,6 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const isNeuralImageStudioActive = useMemo(() => {
     // If extracted image data is present, immediately activate
     if (extractedNeuralImageData !== null) return true;
-    // Only Fathom Quant 3 is empowered to activate Neural Image Studio
-    if (!isQuant3Model) return false;
     if (activeFeatures.some(f => f.id === 'neural_image_studio')) return true;
     const pLower = (previousUserPrompt || '').toLowerCase();
 
@@ -1840,13 +1838,11 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   // Assistant Message
   const isCyber = Boolean(
     message.model === 'fathom-quant-3' ||
-    message.model === 'deepseek-v4-pro-cyber-2.6' ||
-    message.model === 'deepseek-v4-pro-cyber-2.1' ||
     message.model?.includes('cyber') ||
     message.model?.includes('cyper')
   );
   const isMedia = message.model === 'meta/muse-spark-1.3-contributor' || message.model === 'meta/muse-spark-1.2-contributor';
-  const isVision = message.model === 'deepseek-v4-flash-vision-exp' || Boolean(message.image);
+  const isVision = Boolean(message.image);
 
   return (
     <motion.div
@@ -1868,14 +1864,14 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               Matany MAX
             </span>
           )}
-          {(message.model === 'deepseek-v4-pro-cyber-2.6' || message.model === 'deepseek-v4-pro-cyber-2.1') && (
-            <span className="text-[10px] font-mono font-bold text-indigo-300/90 tracking-wide px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20">
-              Fathom Cyber Ultra 2.6
+          {(message.model === 'fathom-search' || message.model?.includes('search')) && (
+            <span className="text-[10px] font-mono font-bold text-emerald-300/90 tracking-wide px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
+              Fathom Search
             </span>
           )}
-          {message.model === 'deepseek-v4-flash-vision-exp' && (
-            <span className="text-[10px] font-mono font-bold text-emerald-300/90 tracking-wide px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
-              Fathom Cam
+          {isMedia && (
+            <span className="text-[10px] font-mono font-bold text-violet-300/90 tracking-wide px-1.5 py-0.5 rounded bg-violet-500/10 border border-violet-500/20">
+              Fathom Spark
             </span>
           )}
 
@@ -2063,7 +2059,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               </div>
             )}
             {/* Stable first-class Neural Image Studio Card */}
-            {(extractedNeuralImageData || (isNeuralImageStudioActive && (message.image || (message.images && message.images.length > 0) || priorImage))) && (
+            {(extractedNeuralImageData || isNeuralImageStudioActive) && (
               <div className="w-full my-3">
                 <NeuralImageCard
                   key={`neural-card-${message.id || 'current'}`}

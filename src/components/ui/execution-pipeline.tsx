@@ -23,7 +23,7 @@ export const ExecutionPipeline: React.FC<ExecutionPipelineProps> = ({
   hasContent = false,
   className,
 }) => {
-  const isCyber26 = model === "deepseek-v4-pro-cyber-2.6" || model === "deepseek-v4-pro-cyber-2.1" || model === "fathom-quant-3";
+  const isCyber26 = model === "fathom-quant-3" || Boolean(model?.includes('cyber'));
   const isCyber = isCyber26;
 
   // Step 1: Input / Recon

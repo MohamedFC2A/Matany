@@ -165,7 +165,7 @@ const MainAppContent: React.FC = () => {
   const [preferredBaseModel, setPreferredBaseModel] = useState<ModelType>(() => {
     try {
       const saved = localStorage.getItem('matany_preferred_base_model');
-      if (saved === 'fathom-quant-3' || saved === 'fathom-search' || saved === 'deepseek-v4-pro-cyber-2.6' || saved === 'deepseek-v4-pro-cyber-2.1') {
+      if (saved === 'fathom-quant-3' || saved === 'fathom-search' || saved === 'meta/muse-spark-1.3-contributor') {
         return saved as ModelType;
       }
     } catch (e) {}
@@ -176,7 +176,7 @@ const MainAppContent: React.FC = () => {
 
   const handleSelectModel = (model: ModelType) => {
     setActiveModel(model);
-    if (model === 'fathom-quant-3' || model === 'fathom-search' || model === 'deepseek-v4-pro-cyber-2.6' || model === 'deepseek-v4-pro-cyber-2.1') {
+    if (model === 'fathom-quant-3' || model === 'fathom-search' || model === 'meta/muse-spark-1.3-contributor') {
       setPreferredBaseModel(model);
       try {
         localStorage.setItem('matany_preferred_base_model', model);
@@ -611,7 +611,7 @@ const MainAppContent: React.FC = () => {
 
     const limitCheck = checkPlanLimit(currentPlanId, {
       isVision: uniqueImagesDataUrls.length > 0,
-      isCyber: meta?.model === 'fathom-quant-3' || meta?.model === 'deepseek-v4-pro-cyber-2.6' || meta?.model === 'deepseek-v4-pro-cyber-2.1',
+      isCyber: meta?.model === 'fathom-quant-3' || Boolean(meta?.model?.includes('cyber')),
       isCyberUrlScan: isActualCyberUrlScan,
     });
 
@@ -917,7 +917,7 @@ const MainAppContent: React.FC = () => {
           reasoningText: fullAssistantReasoning,
           hasImages: uniqueImagesDataUrls.length > 0,
           imagesCount: uniqueImagesDataUrls.length,
-          isCyberScan: !!resolvedTargetUrl || meta?.model === 'fathom-quant-3' || meta?.model === 'deepseek-v4-pro-cyber-2.6' || meta?.model === 'deepseek-v4-pro-cyber-2.1',
+          isCyberScan: !!resolvedTargetUrl || meta?.model === 'fathom-quant-3' || Boolean(meta?.model?.includes('cyber')),
           userId,
           currentPlanId,
         });
@@ -1037,7 +1037,7 @@ const MainAppContent: React.FC = () => {
           reasoningText: effectiveFinalReasoning,
           hasImages: uniqueImagesDataUrls.length > 0,
           imagesCount: uniqueImagesDataUrls.length,
-          isCyberScan: !!resolvedTargetUrl || meta?.model === 'fathom-quant-3' || meta?.model === 'deepseek-v4-pro-cyber-2.6' || meta?.model === 'deepseek-v4-pro-cyber-2.1',
+          isCyberScan: !!resolvedTargetUrl || meta?.model === 'fathom-quant-3' || Boolean(meta?.model?.includes('cyber')),
           userId: currentUserId,
           currentPlanId: currentPlanId || 'free',
         });
@@ -1410,10 +1410,8 @@ const MainAppContent: React.FC = () => {
                           ? "اسأل Fathom Quant 3، صمم أو عدل صوراً، أو تحكم بالسيرفر السحابي VPS..."
                           : activeModel === 'fathom-search'
                           ? "ابحث واستقصِ بذكاء عبر Fathom Search (ويب، سياق، ذاكرة، وفحص وسائط)..."
-                          : activeModel === 'deepseek-v4-pro-cyber-2.6' || activeModel === 'deepseek-v4-pro-cyber-2.1'
-                          ? "اطرح لغزاً، مسألة معقدة، أو افحص أمنياً..."
-                          : activeModel === 'deepseek-v4-flash-vision-exp'
-                          ? "اسأل Fathom Cam أو أرفق صور..."
+                          : activeModel === 'meta/muse-spark-1.3-contributor' || activeModel === 'meta/muse-spark-1.2-contributor'
+                          ? "حلل وسائط، استوعب فيديوهات أو أكواد معقدة..."
                           : isMatanyActive
                           ? "اسأل matany.one في أي شيء..."
                           : "اسأل Fathom Quant 3 في أي شيء..."

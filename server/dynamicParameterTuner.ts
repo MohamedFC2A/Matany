@@ -132,7 +132,7 @@ const CODE_ENGINEERING_PATTERNS = [
   /\b(code|function|interface|refactor|debugging|typescript|python|rust|c\+\+|algorithms?|data\s+structures?|lock-free|ring\s+buffer|concurrency|deadlock|memory\s+leak|compiler|ast|sql\s+schema|unit\s+tests?|e2e\s+tests?)\b/i
 ];
 
-const NEURAL_IMAGE_PATTERNS = [
+export const NEURAL_IMAGE_PATTERNS = [
   // 1. Inpainting / Object Recoloring
   /(?:غير|عدل|بدل|لون|صبغ|غيرلي|بدلي)\s+(?:لي\s+)?(?:لون\s+)?(?:القميص|البنطلون|الفستان|السيارة|العربية|الشعر|العين|العينين|الحذاء|الجاكيت|التيشيرت|المنتج|العنصر|الكائن|الكوب|العلبة|الخلفية|الباب|الجدار|اللون|الملابس|البدلة)/i,
   /\b(?:recolor|change\s+the\s+color\s+of|dye|paint\s+the)\b/i,
@@ -179,14 +179,16 @@ export const CONTEXTUAL_IMAGE_ADDITION_PATTERNS = [
   /\b(?:add\s+(?:to\s+it|a\s+person|a\s+tree|an\s+object|rain|mist|car)|put\s+(?:on\s+it|next\s+to)|insert\s+into)\b/i
 ];
 
-const NEURAL_IMAGE_GENERATION_PATTERNS = [
-  /(?:صورة|صوره|خلفية\s+شاشة|خلفيه\s+شاشة|خلفية\s+الصورة|wallpaper|بورتريه|portrait)\s+(?:واقعية|فوتوغرافية|احترافية|عالية\s+الدقة|hd|4k|8k|فنية)/i,
-  /(?:صمم|صممي|انشئ|أنشئ|ولد|توليد|اعمل|اعملي|سوي|سويلي|طلع|طلعلي|اريد|أريد|عايز|عاوز|بدي|محتاج|تخيل|ارسم|ارسمي|هات|جهز|صنع|create|generate|design|draw|make|render)\s+(?:لي\s+)?(?:صورة|صوره|خلفية\s+شاشة|خلفيه\s+شاشة|لوحة|بورتريه|photo|image|picture|wallpaper|portrait)/i,
+export const NEURAL_IMAGE_GENERATION_PATTERNS = [
+  /(?:صورة|صوره|خلفية|خلفيه|wallpaper|بورتريه|portrait)\s+(?:واقعية|فوتوغرافية|احترافية|عالية\s+الدقة|hd|4k|8k|فنية)/i,
+  /(?:صمم|صممي|انشئ|أنشئ|ولد|توليد|اعمل|اعملي|سوي|سويلي|طلع|طلعلي|اريد|أريد|عايز|عاوز|بدي|محتاج|تخيل|ارسم|ارسمي|هات|جهز|صنع|create|generate|design|draw|make|render)\s+(?:لي\s+)?(?:صورة|صوره|خلفية|خلفيه|لوحة|بورتريه|photo|image|picture|wallpaper|portrait)/i,
+  // Creation verbs with drawing / visualizing any subject
+  /(?:ارسم|ارسمي|صمم|صممي|انشئ|أنشئ|ولد|توليد|اعمل|اعملي|سوي|سويلي|تخيل|draw|paint|render)\s+(?:لي\s+)?[\p{L}\p{N}\s]{2,50}/iu,
   // Concise two-word queries: "صورة [noun]" (e.g. صورة سيارة، صورة فضاء، صورة اسد، صورة بحر، صورة بنت، صورة قطة)
-  /^(?:صورة|صوره|خلفية\s+شاشة|خلفيه\s+شاشة|wallpaper|بورتريه|portrait)\s+[\p{L}\p{N}]+/iu,
-  // Creation verbs directly on objects: "صمم سيارة"، "ارسم فضاء"، "تخيل كوكب"
+  /^(?:صورة|صوره|خلفية\s*شاشة|خلفيه\s*شاشة|wallpaper|بورتريه|portrait)\s+[\p{L}\p{N}]+/iu,
+  // Creation verbs directly on objects
   /(?:صمم|صممي|انشئ|أنشئ|ولد|توليد|اعمل|اعملي|سوي|سويلي|ارسم|ارسمي|تخيل)\s+(?:لي\s+)?(?:قطة|كلب|[أا]سد|نمر|طائر|عصفور|حيوان|شجرة|زهور|ورد|سيارة|عربية|طبيعة|منظر|[أا]شكال|شمس|غروب|شروق|قمر|بحر|فضاء|كوكب|رجل|شخص|وجه|بنت|طفل|بيت|مدينة|سفينة|طائرة|طبيعة\s*صامتة|قصر|مبنى|شارع|غرفة|ساعة|هاتف|كمبيوتر|روبوت|وحش|حصان|ذئب|فراشة|جبل|شاطئ|غابة)/i,
-  /(?:صورة|صوره|خلفية\s+شاشة|خلفيه\s+شاشة|بورتريه|photo|image|picture)\s+(?:لـ|للـ|عن|فيها|تعبر\s+عن|جميلة|فنية|واقعية|احترافية|طبيعية|سينمائية|شخصية|متحركة|جديدة|hd|4k|8k)/i,
+  /(?:صورة|صوره|خلفية|خلفيه|بورتريه|photo|image|picture)\s+(?:لـ|للـ|عن|فيها|تعبر\s+عن|جميلة|فنية|واقعية|احترافية|طبيعية|سينمائية|شخصية|متحركة|جديدة|hd|4k|8k)/i,
   /\b(?:generate\s+(?:an?\s+)?(?:image|photo|picture|wallpaper|portrait)|create\s+(?:an?\s+)?(?:image|photo|picture|wallpaper|portrait)|design\s+(?:an?\s+)?(?:image|photo|picture|wallpaper|portrait)|draw\s+(?:an?\s+)?(?:image|photo|picture)|image\s+of|photo\s+of|picture\s+of|photorealistic|realistic\s+photo|dslr\s+shot|hyperrealistic|realistic\s+portrait|realistic\s+human|realistic\s+person|generate\s+photo|create\s+photo)\b/i
 ];
 
@@ -246,6 +248,21 @@ export const TRIVIAL_DIRECT_QA_PATTERNS = [
 ];
 
 export class DynamicParameterTuner {
+  /**
+   * Deterministically checks whether user input expresses image generation, creation, or editing intent.
+   */
+  public static isImageGenerationOrEditIntent(text: string): boolean {
+    if (!text || typeof text !== 'string') return false;
+    const t = text.trim();
+    if (!t) return false;
+    return (
+      NEURAL_IMAGE_PATTERNS.some(p => p.test(t)) ||
+      NEURAL_IMAGE_GENERATION_PATTERNS.some(p => p.test(t)) ||
+      CONTEXTUAL_IMAGE_EDIT_PATTERNS.some(p => p.test(t)) ||
+      CONTEXTUAL_IMAGE_ADDITION_PATTERNS.some(p => p.test(t))
+    );
+  }
+
   /**
    * Resolves the underlying ModelFamily category from a string identifier.
    */
@@ -329,6 +346,8 @@ export class DynamicParameterTuner {
       m.includes('cyber-2.6-ultra') ||
       m.includes('quant-3') ||
       m.includes('fathom-quant') ||
+      m.includes('spark-1.3') ||
+      m.includes('muse-spark-1.3') ||
       m === 'deepseek-v4-pro-cyber-2.6' ||
       m === 'deepseek-v4-pro-cyber-2.1' ||
       m === 'fathom-cyber-2.6' ||
@@ -1621,8 +1640,14 @@ export class DynamicParameterTuner {
         };
       }
 
-      // Fathom Search (Qwen 3.7 Flash) Web Search integration
-      if (candidateFamily === 'fathom-search' || candidateModel.includes('qwen')) {
+      // Fathom Search Web Search integration via OpenRouter Official Web Plugin & Tools
+      if (candidateFamily === 'fathom-search' || candidateModel.includes('search') || candidateModel.includes(':online') || candidateModel.includes('qwen')) {
+        payload.plugins = [
+          {
+            id: 'web',
+            max_results: 5
+          }
+        ];
         payload.tools = [{ type: 'openrouter:web_search' }];
       }
     }

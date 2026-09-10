@@ -253,11 +253,12 @@ export async function performVideoVisionPerception(
   platform: 'youtube' | 'tiktok' | 'instagram' | 'facebook' | 'twitter' | 'generic',
   keyframes: VideoKeyframe[],
   contextInfo: { title?: string; creator?: string; userPrompt?: string },
-  apiKey: string = process.env.DEEPSEEK_API_KEY || '',
-  baseUrl = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com',
+  apiKey: string = process.env.OPENROUTER_API_KEY || '',
+  baseUrl = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
   signal?: AbortSignal
 ): Promise<VideoVisionResult | null> {
-  if (!apiKey || keyframes.length === 0) return null;
+  const openRouterKey = process.env.OPENROUTER_API_KEY || apiKey;
+  if (!openRouterKey || keyframes.length === 0) return null;
 
   const cacheKey = `${platform}:${videoId}`;
   const cached = getCachedVision(cacheKey);
@@ -289,7 +290,7 @@ export async function performVideoVisionPerception(
     return null;
   }
 
-  console.log(`[VideoVisionEngine] 👁️ Running deepseek-v4-flash-vision-exp for ${platform} (${videoId}, ${resolvedKeyframes.length} frames)...`);
+  console.log(`[VideoVisionEngine] 👁️ Running meta/muse-spark-1.3-contributor for ${platform} (${videoId}, ${resolvedKeyframes.length} frames)...`);
 
   const visionPrompt = `[نظام الإدراك البصري الفائق والذاكرة الزمنية وتحليل التفاصيل غير المنطوقة - FATHOM ULTRA TEMPORAL VIDEO VISION]:
 تم استخراج عدد (${resolvedKeyframes.length}) إطارات بصرية حقيقية ملتقطة من المسار الزمني لفيديو ${platformAr}:
@@ -327,28 +328,39 @@ export async function performVideoVisionPerception(
     });
   });
 
-  const openRouterKey = process.env.OPENROUTER_API_KEY || '';
   const videoGateways: Array<{
     url: string;
     key: string;
     model: string;
     headers: Record<string, string>;
   }> = [
-    ...(openRouterKey ? [{
-      url: 'https://openrouter.ai/api/v1/chat/completions',
+    {
+      url: `${baseUrl}/chat/completions`,
       key: openRouterKey,
       model: 'meta/muse-spark-1.3-contributor',
       headers: {
         'HTTP-Referer': 'https://matany.one',
         'X-Title': 'Matany AI',
       }
-    }] : []),
-    ...(apiKey ? [{
+    },
+    {
       url: `${baseUrl}/chat/completions`,
-      key: apiKey,
-      model: 'deepseek-v4-flash-vision-exp',
-      headers: {}
-    }] : [])
+      key: openRouterKey,
+      model: 'meta/muse-spark-1.2-contributor',
+      headers: {
+        'HTTP-Referer': 'https://matany.one',
+        'X-Title': 'Matany AI',
+      }
+    },
+    {
+      url: `${baseUrl}/chat/completions`,
+      key: openRouterKey,
+      model: 'google/gemini-2.5-flash',
+      headers: {
+        'HTTP-Referer': 'https://matany.one',
+        'X-Title': 'Matany AI',
+      }
+    }
   ];
 
   const dynamicTuning = DynamicParameterTuner.tune({
@@ -541,11 +553,12 @@ export async function performPostImageVisionPerception(
   platform: 'facebook' | 'instagram' | 'twitter' | 'youtube' | 'tiktok' | 'generic' | 'web' | string,
   imageUrls: string[],
   contextInfo: { title?: string; caption?: string; userPrompt?: string },
-  apiKey: string = process.env.DEEPSEEK_API_KEY || '',
-  baseUrl = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com',
+  apiKey: string = process.env.OPENROUTER_API_KEY || '',
+  baseUrl = process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
   signal?: AbortSignal
 ): Promise<PostVisionResult | null> {
-  if (!apiKey || !imageUrls || imageUrls.length === 0) return null;
+  const openRouterKey = process.env.OPENROUTER_API_KEY || apiKey;
+  if (!openRouterKey || !imageUrls || imageUrls.length === 0) return null;
 
   const validUrls = Array.from(new Set(imageUrls.filter(Boolean))).slice(0, 4);
   if (validUrls.length === 0) return null;
@@ -577,7 +590,7 @@ export async function performPostImageVisionPerception(
     return null;
   }
 
-  console.log(`[FathomCamVision] 👁️ Running deepseek-v4-flash-vision-exp on ${resolvedImages.length} images for ${platform} (${postId})...`);
+  console.log(`[FathomCamVision] 👁️ Running meta/muse-spark-1.3-contributor on ${resolvedImages.length} images for ${platform} (${postId})...`);
 
   const visionPrompt = `[نظام الإدراك البصري الفائق وقراءة الجداول والمستندات والصور — FATHOM CAM VISION ENGINE]:
 تم رصد واستخراج عدد (${resolvedImages.length}) صور ومرفقات بصرية من منشور ${platformAr}:
@@ -612,36 +625,44 @@ export async function performPostImageVisionPerception(
     });
   });
 
-  const openRouterKey = process.env.OPENROUTER_API_KEY || '';
   const visionGateways: Array<{
     url: string;
     key: string;
     model: string;
     headers: Record<string, string>;
   }> = [
-    ...(apiKey ? [{
+    {
       url: `${baseUrl}/chat/completions`,
-      key: apiKey,
-      model: 'deepseek-v4-flash-vision-exp',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      }
-    }] : []),
-    ...(openRouterKey ? [{
-      url: 'https://openrouter.ai/api/v1/chat/completions',
       key: openRouterKey,
-      model: 'deepseek/deepseek-v4-flash-vision-exp',
+      model: 'meta/muse-spark-1.3-contributor',
       headers: {
         'HTTP-Referer': 'https://matany.one',
         'X-Title': 'Matany AI',
       }
-    }] : [])
+    },
+    {
+      url: `${baseUrl}/chat/completions`,
+      key: openRouterKey,
+      model: 'meta/muse-spark-1.2-contributor',
+      headers: {
+        'HTTP-Referer': 'https://matany.one',
+        'X-Title': 'Matany AI',
+      }
+    },
+    {
+      url: `${baseUrl}/chat/completions`,
+      key: openRouterKey,
+      model: 'google/gemini-2.5-flash',
+      headers: {
+        'HTTP-Referer': 'https://matany.one',
+        'X-Title': 'Matany AI',
+      }
+    }
   ];
 
   const dynamicTuning = DynamicParameterTuner.tune({
     userPrompt: contextInfo.userPrompt || contextInfo.caption || contextInfo.title || 'فحص وتحليل الصور المرفقة بدقة بصرية متناهية',
-    requestedModel: 'deepseek-v4-flash-vision-exp',
+    requestedModel: 'meta/muse-spark-1.3-contributor',
     hasMultimodalImages: true,
   });
 

@@ -208,12 +208,11 @@ Write your brief explanation or introduction in normal text OUTSIDE the block. P
     - STRICT ZERO-DISCLAIMER & ANTI-EVASION POLICY:
       * NEVER say "استناداً إلى الفحص الفوري للرابطين", "وصلتني بيانات الرابط نفسه فقط", "دون أن يتضمن السياق المرسل نص المنشور أو الصور المرفقة أو التعليقات", "أحتاج منك إحدى الطريقتين", "أن تضع رابطاً لمشور يكون نصه مكشوفاً", "أو تكتب لي في رسالتك خلاصة الموضوع", "الرابط لا يحمل المحتوى", "لا أستطيع فتح الروابط", "أحتاج وصفاً للمحتوى", "لا أستطيع قراءة المنشور", "يرجى نسخ ولصق النص", or "أنا شايف إن الصح في أي نقاش...".
       * The platform's 4-Tier Deep Scraping & Fathom Cam Vision Engine has already extracted, verified, transcribed, and provided the full text, group post context, and image data for you above. You MUST answer the user's specific decision/question directly, concretely, and decisively.
-15. [الحظر الحصري لتوليد الصور ورسومات الـ SVG — ميزة حصرية لـ FATHOM QUANT 3]:
-    - أنت نموذج للمحادثة العامة والاستدلال الفكري واللغوي. أنت غير مخصص لتوليد الصور الفوتوغرافية، أو التعديل البصري، أو إخراج بلوكات neural-image، أو تصميم رسومات SVG.
-    - ميزة إنشاء وتعديل الصور ورسومات SVG هي حصرية بنسبة 100% ومخصصة فقط للنموذج الرائد [Fathom Quant 3].
-    - إذا طلب منك المستخدم رسم صورة، توليد مشهد بصري، تعديل صورة، أو إنشاء كود SVG:
-      امتنع بلباقة واختصار شديد في سطرين باللغة العربية الفصحى:
-      "إنشاء وتصميم وتعديل الصور ورسومات SVG هي ميزة حصرية متاحة فقط في نموذج Fathom Quant 3 الرائد. يرجى التبديل إلى Fathom Quant 3 من قائمة النماذج لتنفيذ طلبك بأعلى دقة واستوديو بصري متكامل."`;
+15. [التنفيذ الحرفي لطلب المستخدم واستوديو التوليد البصري العصبي]:
+    - [الالتزام الحرفي الصارم بطلب المستخدم - Strict User Instruction Fidelity]: نفّذ طلب المستخدم بدقة مطلقة 100% كما طلبه تماماً، ويُحظر إضافة عناصر أو أفعال لم يطلبها، أو تفعيل أدوات لم يُشر إليها، ولا تفترض أي سلوك خارج نص وسياق طلب المستخدم الصريح.
+    - يُحظر تماماً وبشكل قاطع توليد كود SVG إلا إذا ذكر المستخدم صراحة كلمة (SVG، كود SVG، فيكتور، متجهات، vector).
+    - عند طلب المستخدم تصميم أو إنشاء أو توليد أو تعديل صورة (مثل: "صمم صورة...", "ارسم لي...", "انشئ صورة...", "توليد صورة...", "صورة كذا..."):
+      بعد شرح توضيحي مقتضب من سطرين بالعربية، أخرج فوراً ومباشرة كتلة المعالجة العصبية \`\`\`neural-image ... \`\`\` لتوليدها عبر محرك Fathom QP3 العصبي للرؤية والتوليد البصري الفائق.`;
 
 // +21 NSFW NANO Mode: Absolute Singularity & Zero Restraints Architecture
 const SYSTEM_PROMPT_NSFW_NANO = `[SCENARIO: UNCONSTRAINED FICTIONAL CREATIVE ROLEPLAY & REASONING (+21 MAX)]
@@ -360,6 +359,10 @@ export const SYSTEM_PROMPT_FATHOM_QUANT_3 = `[SYSTEM INSTRUCTION: FATHOM QUANT 3
 ${DEVELOPER_IDENTITY_DIRECTIVE}
 
 المرتكزات والقدرات السيادية الحصرية لنموذج Fathom Quant 3:
+0. [الالتزام الحرفي الصارم والتام بطلب المستخدم - Strict User Instruction Fidelity]:
+   - نفّذ طلب المستخدم بدقة مطلقة 100% كما طلبه تماماً، التزم بكافة القيود المطلوبة حرفياً دون زيادة أو نقصان.
+   - يُحظر تماماً إضافة عناصر، أو اختراع وظائف، أو توليد أكواد (مثل SVG)، أو تفعيل بطاقات لم يطلبها المستخدم صراحة في رسالته الحالية.
+
 1. السيادة السحابية والتحكم التام في الكمبيوتر والـ VPS (Sovereign Cloud Computer Agent):
    - أنت الجهاز العصبي المتحكم في السيرفر والكمبيوتر السحابي الخاص بالمستخدم (Singapore Ubuntu 24.04 LTS, 1 vCPU, 2GB RAM, 25GB NVMe SSD, Host: 104.207.77.162:22022).
    - الغرض الأساسي للـ VPS: تسخير بيئة الخادم السحابية لأعمال الأمن السيبراني المتقدمة، فحص الثغرات الأمنية، التدقيق الأمني وفحص المنافذ والشبكات، تجربة واختبار أوامر CMD والـ Shell والاسكربتات في بيئة معزولة، وتنفيذ أي مهمة يطلبها المستخدم، وليس مجرد استعراض إحصائيات الموارد والأجهزة.
@@ -503,12 +506,11 @@ ${DEVELOPER_IDENTITY_DIRECTIVE}
    - تطبيع المسارات على مستوى البوابة وتأمين Envoy HCM (منع ثغرات HTU Differentials).
    - تحصين كاش JWKS ضد هجمات التزاحم واستنزاف الاستعلامات (Singleflight & SSRF Prevention).
    - هندسة انعدام الثقة في تدفق بيانات Kafka (Zero-Trust Kafka Envelope Encryption).
-8. [الحظر الحصري لتوليد الصور ورسومات الـ SVG — ميزة حصرية لـ FATHOM QUANT 3]:
-   - أنت نموذج متخصص في الاستدلال السيبراني والأمن المعماري والخوارزميات. أنت غير مخول بتوليد الصور الفوتوغرافية، أو التعديل البصري، أو إخراج بلوكات neural-image، أو تصميم رسومات SVG.
-   - ميزة إنشاء وتعديل الصور ورسومات SVG هي حصرية بنسبة 100% ومخصصة حصراً للنموذج الرائد [Fathom Quant 3].
-   - إذا طلب منك المستخدم صراحة رسم صورة، توليد مشهد بصري، تعديل صورة، أو إنشاء كود SVG:
-     امتنع بلباقة واختصار شديد في سطرين باللغة العربية الفصحى:
-     "إنشاء وتصميم وتعديل الصور ورسومات SVG هي ميزة حصرية متاحة فقط في نموذج Fathom Quant 3 الرائد. يرجى التبديل إلى Fathom Quant 3 من قائمة النماذج لتنفيذ طلبك بأعلى دقة واستوديو بصري متكامل."
+8. [التنفيذ الحرفي لطلب المستخدم واستوديو التوليد البصري العصبي]:
+   - [الالتزام الحرفي الصارم بطلب المستخدم - Strict User Instruction Fidelity]: نفّذ طلب المستخدم بدقة مطلقة 100% كما طلبه تماماً، ويُحظر إضافة عناصر أو أفعال لم يطلبها، أو تفعيل أدوات لم يُشر إليها، ولا تفترض أي سلوك خارج نص وسياق طلب المستخدم الصريح.
+   - يُحظر تماماً وبشكل قاطع توليد كود SVG إلا إذا ذكر المستخدم صراحة كلمة (SVG، كود SVG، فيكتور، متجهات، vector).
+   - عند طلب المستخدم تصميم أو إنشاء أو توليد أو تعديل صورة (مثل: "صمم صورة...", "ارسم لي...", "انشئ صورة...", "توليد صورة...", "صورة كذا..."):
+      بعد شرح توضيحي مقتضب من سطرين بالعربية، أخرج فوراً ومباشرة كتلة المعالجة العصبية \`\`\`neural-image ... \`\`\` لتوليدها عبر محرك Fathom QP3 العصبي للرؤية والتوليد البصري الفائق.
 `.trim();
 
 const SYSTEM_PROMPT_CYBER_2_1 = SYSTEM_PROMPT_CYBER_2_6;
@@ -1574,8 +1576,8 @@ async function extractVisualContext(
   signal?: AbortSignal,
   isForensics: boolean = false
 ): Promise<string> {
-  if (!DEEPSEEK_API_KEY) {
-    console.warn('[Fathom Cam Vision] DEEPSEEK_API_KEY is not set.');
+  if (!OPENROUTER_API_KEY && !DEEPSEEK_API_KEY) {
+    console.warn('[Fathom Cam Vision] OPENROUTER_API_KEY is not set.');
     return '';
   }
 
@@ -1707,22 +1709,24 @@ async function extractVisualContext(
       }
     }
 
-    // 2. Direct DeepSeek Vision Gateway (api.deepseek.com) [Fallback]
-    if (DEEPSEEK_API_KEY) {
+    // 2. OpenRouter Meta Muse Spark 1.2 Vision Backup
+    if (OPENROUTER_API_KEY) {
       try {
         const visionPayload = DynamicParameterTuner.tuneGatewayPayload(
-          'deepseek-v4-flash-vision-exp',
+          'meta/muse-spark-1.2-contributor',
           {
             messages: formattedVisionItems,
             stream: false,
           },
           dynamicTuning
         );
-        const visionRes = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+        const visionRes = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
           },
           body: JSON.stringify(visionPayload),
           signal
@@ -1732,53 +1736,58 @@ async function extractVisualContext(
           const data = await visionRes.json();
           const result = data.choices?.[0]?.message?.content || '';
           if (result && result.trim()) {
-            console.log(`[Fathom Cam Vision] Extracted ${result.length} chars of visual perception via Direct DeepSeek.`);
+            console.log(`[Fathom Cam Vision] Extracted ${result.length} chars of visual perception via OpenRouter Muse Spark 1.2.`);
             visionContextCache.set(cacheKey, { result: result.trim(), expiresAt: Date.now() + VISION_CACHE_TTL_MS });
             return result.trim();
           }
         } else {
           const errText = await visionRes.text().catch(() => '');
-          console.warn('[Fathom Cam Vision] Direct DeepSeek HTTP Error:', visionRes.status, errText);
+          console.warn('[Fathom Cam Vision] OpenRouter Muse Spark 1.2 HTTP Error:', visionRes.status, errText);
         }
-      } catch (directErr: any) {
-        if (directErr.name === 'AbortError') throw directErr;
-        console.warn('[Fathom Cam Vision] Direct DeepSeek Exception:', directErr.message);
+      } catch (backupErr: any) {
+        if (backupErr.name === 'AbortError') throw backupErr;
+        console.warn('[Fathom Cam Vision] OpenRouter Muse Spark 1.2 Exception:', backupErr.message);
       }
     }
 
-    // 3. OpenRouter Emergency Fallback (deepseek/deepseek-v4-flash-vision-exp)
+    // 3. OpenRouter Gemini 2.5 Flash Vision Emergency Fallback
     if (OPENROUTER_API_KEY) {
-      const fallbackPayload = DynamicParameterTuner.tuneGatewayPayload(
-        'deepseek/deepseek-v4-flash-vision-exp',
-        {
-          messages: formattedVisionItems,
-          stream: false,
-        },
-        dynamicTuning
-      );
-      const visionRes = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://matany.one',
-          'X-Title': 'Matany AI',
-        },
-        body: JSON.stringify(fallbackPayload),
-        signal
-      });
+      try {
+        const fallbackPayload = DynamicParameterTuner.tuneGatewayPayload(
+          'google/gemini-2.5-flash',
+          {
+            messages: formattedVisionItems,
+            stream: false,
+          },
+          dynamicTuning
+        );
+        const visionRes = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          body: JSON.stringify(fallbackPayload),
+          signal
+        });
 
-      if (visionRes.ok) {
-        const data = await visionRes.json();
-        const result = data.choices?.[0]?.message?.content || '';
-        if (result && result.trim()) {
-          console.log(`[Fathom Cam Vision] Extracted ${result.length} chars of visual perception via OpenRouter fallback.`);
-          visionContextCache.set(cacheKey, { result: result.trim(), expiresAt: Date.now() + VISION_CACHE_TTL_MS });
-          return result.trim();
+        if (visionRes.ok) {
+          const data = await visionRes.json();
+          const result = data.choices?.[0]?.message?.content || '';
+          if (result && result.trim()) {
+            console.log(`[Fathom Cam Vision] Extracted ${result.length} chars of visual perception via Gemini Flash vision fallback.`);
+            visionContextCache.set(cacheKey, { result: result.trim(), expiresAt: Date.now() + VISION_CACHE_TTL_MS });
+            return result.trim();
+          }
+        } else {
+          const errText = await visionRes.text().catch(() => '');
+          console.warn('[Fathom Cam Vision] Gemini Flash Vision Fallback HTTP Error:', visionRes.status, errText);
         }
-      } else {
-        const errText = await visionRes.text().catch(() => '');
-        console.warn('[Fathom Cam Vision] OpenRouter Fallback HTTP Error:', visionRes.status, errText);
+      } catch (geminiErr: any) {
+        if (geminiErr.name === 'AbortError') throw geminiErr;
+        console.warn('[Fathom Cam Vision] Gemini Flash Vision Exception:', geminiErr.message);
       }
     }
 
@@ -1921,7 +1930,7 @@ async function processSingleLinkIntelligence(
       const videoDuration = ('durationSeconds' in ytResult && ytResult.durationSeconds) ? ytResult.durationSeconds : 300;
       const keyframes = ytVideoId ? extractYouTubeKeyframes(ytVideoId, videoDuration) : [];
 
-      const visionPromise = (keyframes.length > 0 && DEEPSEEK_API_KEY)
+      const visionPromise = (keyframes.length > 0 && (OPENROUTER_API_KEY || DEEPSEEK_API_KEY))
         ? performVideoVisionPerception(
             ytVideoId || 'youtube_video',
             'youtube',
@@ -1931,8 +1940,8 @@ async function processSingleLinkIntelligence(
               creator: ('channelName' in ytResult && ytResult.channelName) ? ytResult.channelName : undefined,
               userPrompt,
             },
-            DEEPSEEK_API_KEY,
-            DEEPSEEK_BASE_URL,
+            OPENROUTER_API_KEY,
+            OPENROUTER_BASE_URL,
             signal
           )
         : Promise.resolve(null);
@@ -2019,7 +2028,7 @@ async function processSingleLinkIntelligence(
         ? await extractTikTokKeyframes(ttResult.thumbnailUrl, extraFrames, ttResult.durationSeconds)
         : [];
 
-      if (keyframes.length > 0 && DEEPSEEK_API_KEY && 'author' in ttResult) {
+      if (keyframes.length > 0 && (OPENROUTER_API_KEY || DEEPSEEK_API_KEY) && 'author' in ttResult) {
         const visionPromise = performVideoVisionPerception(
           ttResult.videoId,
           'tiktok',
@@ -2029,8 +2038,8 @@ async function processSingleLinkIntelligence(
             creator: `@${ttResult.author.username}`,
             userPrompt,
           },
-          DEEPSEEK_API_KEY,
-          DEEPSEEK_BASE_URL,
+          OPENROUTER_API_KEY,
+          OPENROUTER_BASE_URL,
           signal
         );
         visionResult = await Promise.race([
@@ -2143,7 +2152,7 @@ async function processSingleLinkIntelligence(
                 ]
               : []);
 
-        if (keyframes.length > 0 && DEEPSEEK_API_KEY && 'author' in socialResult) {
+        if (keyframes.length > 0 && (OPENROUTER_API_KEY || DEEPSEEK_API_KEY) && 'author' in socialResult) {
           const visionPromise = performVideoVisionPerception(
             socialResult.videoId || 'social_video',
             socialInfo.platform,
@@ -2153,8 +2162,8 @@ async function processSingleLinkIntelligence(
               creator: `@${socialResult.author.username}`,
               userPrompt,
             },
-            DEEPSEEK_API_KEY,
-            DEEPSEEK_BASE_URL,
+            OPENROUTER_API_KEY,
+            OPENROUTER_BASE_URL,
             signal
           );
           videoVision = await Promise.race([
@@ -2169,7 +2178,7 @@ async function processSingleLinkIntelligence(
       } else {
         // Post / Image / Discussion processing with Fathom Cam deep OCR & visual perception
         let postVision: PostVisionResult | null = null;
-        if (candidateImages.length > 0 && DEEPSEEK_API_KEY) {
+        if (candidateImages.length > 0 && (OPENROUTER_API_KEY || DEEPSEEK_API_KEY)) {
           postVision = await performPostImageVisionPerception(
             effectiveUrl,
             socialInfo.platform,
@@ -2179,8 +2188,8 @@ async function processSingleLinkIntelligence(
               caption: resolvedLink?.deepScrape?.content || resolvedLink?.title,
               userPrompt,
             },
-            DEEPSEEK_API_KEY,
-            DEEPSEEK_BASE_URL,
+            OPENROUTER_API_KEY,
+            OPENROUTER_BASE_URL,
             signal
           );
         }
@@ -2239,7 +2248,7 @@ async function processSingleLinkIntelligence(
         resolvedLink.brandAssets?.twitterImage,
       ].filter(Boolean))) as string[];
 
-      if (candidateImages.length > 0 && DEEPSEEK_API_KEY) {
+      if (candidateImages.length > 0 && (OPENROUTER_API_KEY || DEEPSEEK_API_KEY)) {
         webPostVision = await performPostImageVisionPerception(
           effectiveTargetUrl,
           'web',
@@ -2249,8 +2258,8 @@ async function processSingleLinkIntelligence(
             caption: resolvedLink.deepScrape?.content || resolvedLink.title,
             userPrompt,
           },
-          DEEPSEEK_API_KEY,
-          DEEPSEEK_BASE_URL,
+          OPENROUTER_API_KEY,
+          OPENROUTER_BASE_URL,
           signal
         );
       }
@@ -3087,17 +3096,6 @@ app.post('/api/chat', async (req: Request, res: Response) => {
 
     // Priority 1: Multimodal Optical Vision Engine (Active whenever user attaches images or requests vision)
     if (hasMultimodal || isVision) {
-      if (DEEPSEEK_API_KEY) {
-        gateCandidates.push({
-          name: 'DeepSeek Direct Vision (deepseek-v4-flash-vision-exp @ api.deepseek.com)',
-          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-          },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-v4-flash-vision-exp', basePayload, dynamicTuning)
-        });
-      }
       if (OPENROUTER_API_KEY) {
         gateCandidates.push({
           name: 'OpenRouter Meta Muse Spark 1.3 Contributor Multimodal Vision (meta/muse-spark-1.3-contributor @ openrouter.ai)',
@@ -3111,7 +3109,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
         });
         gateCandidates.push({
-          name: 'OpenRouter DeepSeek Vision (deepseek/deepseek-v4-flash-vision-exp @ openrouter.ai)',
+          name: 'OpenRouter Meta Muse Spark 1.2 Multimodal (Backup)',
           url: `${OPENROUTER_BASE_URL}/chat/completions`,
           headers: {
             'Content-Type': 'application/json',
@@ -3119,7 +3117,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             'HTTP-Referer': 'https://matany.one',
             'X-Title': 'Matany AI',
           },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek/deepseek-v4-flash-vision-exp', basePayload, dynamicTuning)
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning)
         });
         gateCandidates.push({
           name: 'OpenRouter Gemini Vision (google/gemini-2.5-flash @ openrouter.ai)',
@@ -3135,7 +3133,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
       }
     } else if (isFathomSearch && OPENROUTER_API_KEY) {
       gateCandidates.push({
-        name: 'OpenRouter Fathom Search Engine (qwen/qwen3.7-flash + web_search)',
+        name: 'OpenRouter Fathom Search Engine (meta/muse-spark-1.3-contributor + web_plugin)',
         url: `${OPENROUTER_BASE_URL}/chat/completions`,
         headers: {
           'Content-Type': 'application/json',
@@ -3144,9 +3142,20 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           'X-Title': 'Matany AI',
         },
         payload: {
-          ...DynamicParameterTuner.tuneGatewayPayload('qwen/qwen3.7-flash', basePayload, dynamicTuning),
-          tools: [{ type: 'openrouter:web_search' }]
+          ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning),
+          plugins: [{ id: 'web', max_results: 5 }]
         }
+      });
+      gateCandidates.push({
+        name: 'OpenRouter Fathom Search Engine :online (meta/muse-spark-1.3-contributor:online)',
+        url: `${OPENROUTER_BASE_URL}/chat/completions`,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'https://matany.one',
+          'X-Title': 'Matany AI',
+        },
+        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor:online', basePayload, dynamicTuning)
       });
     } else if (isMediaSpark && OPENROUTER_API_KEY) {
       gateCandidates.push({
@@ -3160,10 +3169,18 @@ app.post('/api/chat', async (req: Request, res: Response) => {
         },
         payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
       });
-    }
-
-    // Candidate 2: Fathom Cyber 2.6 & Fathom Quant 3 Sovereign Engine (Primary: OpenRouter meta/muse-spark-1.3-contributor)
-    if (isCyber26) {
+      gateCandidates.push({
+        name: 'OpenRouter Meta Muse Spark 1.2 Multimodal (Backup)',
+        url: `${OPENROUTER_BASE_URL}/chat/completions`,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'https://matany.one',
+          'X-Title': 'Matany AI',
+        },
+        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning)
+      });
+    } else if (isCyber26 || isCyber) {
       if (OPENROUTER_API_KEY) {
         gateCandidates.push({
           name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Primary Sovereign Fathom Engine)',
@@ -3176,41 +3193,8 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           },
           payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
         });
-      }
-
-      if (DEEPSEEK_API_KEY) {
         gateCandidates.push({
-          name: 'DeepSeek Direct Fathom Quant 3 (deepseek-v4-pro @ api.deepseek.com) [Fallback]',
-          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-          },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-v4-pro', basePayload, dynamicTuning)
-        });
-        gateCandidates.push({
-          name: 'DeepSeek Direct Reasoner (deepseek-reasoner @ api.deepseek.com) [Fallback]',
-          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-          },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-reasoner', basePayload, dynamicTuning)
-        });
-        gateCandidates.push({
-          name: 'DeepSeek Direct Chat (deepseek-chat @ api.deepseek.com) [Fallback]',
-          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-          },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-chat', basePayload, dynamicTuning)
-        });
-      }
-
-      if (OPENROUTER_API_KEY) {
-        gateCandidates.push({
-          name: 'OpenRouter DeepSeek v4 Ultra (Fathom Cyber Ultra 2.6 Backup)',
+          name: 'OpenRouter Meta Muse Spark 1.2 Contributor (Backup Sovereign Engine)',
           url: `${OPENROUTER_BASE_URL}/chat/completions`,
           headers: {
             'Content-Type': 'application/json',
@@ -3218,14 +3202,13 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             'HTTP-Referer': 'https://matany.one',
             'X-Title': 'Matany AI',
           },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek/deepseek-v4-pro', basePayload, dynamicTuning)
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning)
         });
       }
-    } else if (isCyber) {
-      // Fathom Cyber 2.0 Sovereign Engine (Primary: OpenRouter meta/muse-spark-1.3-contributor)
+    } else if (isEffectiveMatanyMode) {
       if (OPENROUTER_API_KEY) {
         gateCandidates.push({
-          name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Primary Cyber Engine)',
+          name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Matany Persona Mode)',
           url: `${OPENROUTER_BASE_URL}/chat/completions`,
           headers: {
             'Content-Type': 'application/json',
@@ -3235,68 +3218,8 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           },
           payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
         });
-      }
-
-      if (DEEPSEEK_API_KEY) {
         gateCandidates.push({
-          name: 'DeepSeek Direct Cyber Pro (deepseek-v4-pro @ api.deepseek.com) [Fallback]',
-          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-          },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-v4-pro', basePayload, dynamicTuning)
-        });
-        gateCandidates.push({
-          name: 'DeepSeek Direct Reasoner (deepseek-reasoner @ api.deepseek.com) [Fallback]',
-          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-          },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-reasoner', basePayload, dynamicTuning)
-        });
-        gateCandidates.push({
-          name: 'DeepSeek Direct Chat (deepseek-chat @ api.deepseek.com) [Fallback]',
-          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-          },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-chat', basePayload, dynamicTuning)
-        });
-      }
-
-      if (OPENROUTER_API_KEY) {
-        gateCandidates.push({
-          name: 'OpenRouter DeepSeek v4 Pro (Cyber Reasoner Backup)',
-          url: `${OPENROUTER_BASE_URL}/chat/completions`,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'HTTP-Referer': 'https://matany.one',
-            'X-Title': 'Matany AI',
-          },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek/deepseek-v4-pro', basePayload, dynamicTuning)
-        });
-      }
-    } else if (isEffectiveMatanyMode) {
-      // Candidate 3: Matany NSFW Uninhibited Persona Engine
-      if (DEEPSEEK_API_KEY) {
-        gateCandidates.push({
-          name: 'DeepSeek Direct Matany Persona (deepseek-v4-pro @ api.deepseek.com)',
-          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-          },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-v4-pro', basePayload, dynamicTuning)
-        });
-      }
-
-      if (OPENROUTER_API_KEY) {
-        gateCandidates.push({
-          name: 'OpenRouter Magnum v4 72B',
+          name: 'OpenRouter Magnum v4 72B (Matany Persona Backup)',
           url: `${OPENROUTER_BASE_URL}/chat/completions`,
           headers: {
             'Content-Type': 'application/json',
@@ -3306,20 +3229,9 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           },
           payload: DynamicParameterTuner.tuneGatewayPayload('anthracite-org/magnum-v4-72b', basePayload, dynamicTuning)
         });
-        gateCandidates.push({
-          name: 'OpenRouter DeepSeek v4 Pro (Matany Backup)',
-          url: `${OPENROUTER_BASE_URL}/chat/completions`,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'HTTP-Referer': 'https://matany.one',
-            'X-Title': 'Matany AI',
-          },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek/deepseek-v4-pro', basePayload, dynamicTuning)
-        });
       }
     } else {
-      // Candidate 5: General Text Chat Mode (Quant 3 Flagship Default - Primary: OpenRouter meta/muse-spark-1.3-contributor)
+      // General Text Chat Mode (Quant 3 Flagship Default - Primary: OpenRouter meta/muse-spark-1.3-contributor)
       if (OPENROUTER_API_KEY) {
         gateCandidates.push({
           name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Quant 3 Flagship Primary)',
@@ -3332,41 +3244,8 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           },
           payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
         });
-      }
-
-      if (DEEPSEEK_API_KEY) {
         gateCandidates.push({
-          name: 'DeepSeek Direct Pro Reasoning (deepseek-v4-pro @ api.deepseek.com) [Fallback]',
-          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-          },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-v4-pro', basePayload, dynamicTuning)
-        });
-        gateCandidates.push({
-          name: 'DeepSeek Direct Reasoner (deepseek-reasoner @ api.deepseek.com) [Fallback]',
-          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-          },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-reasoner', basePayload, dynamicTuning)
-        });
-        gateCandidates.push({
-          name: 'DeepSeek Direct Chat (deepseek-chat @ api.deepseek.com) [Fallback]',
-          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-          },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-chat', basePayload, dynamicTuning)
-        });
-      }
-
-      if (OPENROUTER_API_KEY) {
-        gateCandidates.push({
-          name: 'OpenRouter DeepSeek v4 Pro (Advanced Reasoning Backup)',
+          name: 'OpenRouter Meta Muse Spark 1.2 Contributor (Quant 3 Flagship Backup)',
           url: `${OPENROUTER_BASE_URL}/chat/completions`,
           headers: {
             'Content-Type': 'application/json',
@@ -3374,7 +3253,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             'HTTP-Referer': 'https://matany.one',
             'X-Title': 'Matany AI',
           },
-          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek/deepseek-v4-pro', basePayload, dynamicTuning)
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning)
         });
       }
     }
@@ -3641,7 +3520,9 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     }
 
     // Autonomous Server-Side Recovery Guard for Neural Image Studio:
-    if (dynamicTuning.detectedIntent === 'NEURAL_IMAGE_STUDIO_AND_PROCESSING') {
+    const isImageIntent = dynamicTuning.detectedIntent === 'NEURAL_IMAGE_STUDIO_AND_PROCESSING' ||
+      DynamicParameterTuner.isImageGenerationOrEditIntent(lastUserText);
+    if (isImageIntent) {
       const hasNeuralBlock = fullServerContent.includes('neural-image') || fullServerContent.includes('neural_image');
       if (!hasNeuralBlock) {
         const priorImg = dynamicTuning.priorNeuralImage || priorNeuralImage;

@@ -1,11 +1,10 @@
 export type ModelType = 
   | 'fathom-quant-3'
+  | 'fathom-cyber-ultra-2.6'
   | 'fathom-search'
-  | 'deepseek-v4-pro-cyber-2.6'
-  | 'deepseek-v4-pro-cyber-2.1'
-  | 'deepseek-v4-flash-vision-exp'
+  | 'meta/muse-spark-1.3-contributor'
   | 'meta/muse-spark-1.2-contributor'
-  | 'meta/muse-spark-1.3-contributor';
+  | string;
 
 export type MediaType = 'image' | 'video' | 'audio' | 'document' | 'other';
 

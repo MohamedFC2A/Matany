@@ -24,11 +24,11 @@ export const InteractiveGridBackground: React.FC<InteractiveGridBackgroundProps>
 
   const theme: GridTheme = isFlameActive
     ? 'matany'
-    : (activeModel === 'deepseek-v4-pro-cyber-2.6' || activeModel === 'deepseek-v4-pro-cyber-2.1')
+    : Boolean(activeModel?.includes('cyber'))
     ? 'cyber'
-    : activeModel === 'deepseek-v4-flash-vision-exp'
+    : Boolean(activeModel?.includes('vision'))
     ? 'vision'
-    : (activeModel === 'meta/muse-spark-1.3-contributor' || activeModel === 'meta/muse-spark-1.2-contributor' || activeModel === 'deepseek-v4-flash-media')
+    : (activeModel === 'meta/muse-spark-1.3-contributor' || activeModel === 'meta/muse-spark-1.2-contributor')
     ? 'media'
     : 'fathom';
 
