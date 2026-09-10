@@ -1586,7 +1586,7 @@ export class DynamicParameterTuner {
           payload.presence_penalty = candidateParams.presence_penalty;
         }
       } else {
-        // Standard DeepSeek models with thinking capability
+        // Standard models with thinking capability
         payload.reasoning_effort = reasoningEffort;
         payload.extra_body.reasoning_effort = reasoningEffort;
         payload.reasoning = {
@@ -1618,6 +1618,8 @@ export class DynamicParameterTuner {
       const maxThinkingTokens = candidateParams.max_thinking_tokens;
 
       if (thinkingMode === 'disabled') {
+        delete payload.reasoning_effort;
+        delete payload.reasoning;
         payload.extra_body = {
           ...(payload.extra_body || {}),
           user_id: sanitizedUserId,
@@ -1739,6 +1741,28 @@ export class DynamicParameterTuner {
         content: contentStr || 'متابعة'
       };
     });
+  }
+
+  /**
+   * Sanitizes payload right before sending over HTTP to a specific gateway.
+   * For OpenRouter (openrouter.ai), enforces that only ONE of "reasoning.effort"
+   * and "reasoning.max_tokens" is specified to prevent 400 Bad Request.
+   */
+  public static sanitizeForGateway(url: string, payload: any): any {
+    if (!payload || typeof payload !== 'object') return payload;
+    const cleanPayload = { ...payload };
+
+    if (typeof url === 'string' && url.includes('openrouter.ai')) {
+      if (cleanPayload.reasoning && typeof cleanPayload.reasoning === 'object') {
+        cleanPayload.reasoning = { ...cleanPayload.reasoning };
+        // If both effort and max_tokens are present, OpenRouter returns 400.
+        // We keep effort for OpenRouter and strip max_tokens from the reasoning object:
+        if (cleanPayload.reasoning.effort && cleanPayload.reasoning.max_tokens) {
+          delete cleanPayload.reasoning.max_tokens;
+        }
+      }
+    }
+    return cleanPayload;
   }
 }
 

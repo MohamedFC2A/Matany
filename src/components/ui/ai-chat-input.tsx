@@ -661,9 +661,9 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
         : (internalModel === 'fathom-search' || isDeepSearchEffective)
         ? 'fathom-search'
         : hasNonImageMedia
-        ? 'meta/muse-spark-1.3-contributor'
+        ? 'meta/muse-spark-1.3'
         : hasAttachments
-        ? 'meta/muse-spark-1.3-contributor'
+        ? 'meta/muse-spark-1.3'
         : activeBackendModel;
 
       const preloadedKeyframes: Record<string, string[]> = {};
@@ -1079,15 +1079,15 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                   );
                 })()}
 
-                {/* 3. Fathom Spark (Multimodal Media, Code & Vision) */}
+                {/* 4. Fathom Spark (Multimodal Media, Code & Vision) */}
                 {(() => {
-                  const isSelected = internalModel === 'meta/muse-spark-1.3-contributor' || internalModel === 'meta/muse-spark-1.2-contributor';
+                  const isSelected = internalModel === 'meta/muse-spark-1.3' || internalModel === 'meta/muse-spark-1.3-contributor' || internalModel === 'meta/muse-spark-1.2' || internalModel === 'meta/muse-spark-1.2-contributor';
                   return (
                     <button
                       type="button"
                       onClick={() => {
-                        setInternalModel('meta/muse-spark-1.3-contributor');
-                        onSelectModel?.('meta/muse-spark-1.3-contributor');
+                        setInternalModel('meta/muse-spark-1.3');
+                        onSelectModel?.('meta/muse-spark-1.3');
                         if (isDeepSearchEffective) toggleDeepSearch();
                         setIsModelMenuOpen(false);
                       }}

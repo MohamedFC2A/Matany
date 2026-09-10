@@ -2,6 +2,8 @@ export type ModelType =
   | 'fathom-quant-3'
   | 'fathom-cyber-ultra-2.6'
   | 'fathom-search'
+  | 'meta/muse-spark-1.3'
+  | 'meta/muse-spark-1.2'
   | 'meta/muse-spark-1.3-contributor'
   | 'meta/muse-spark-1.2-contributor'
   | string;

@@ -1111,15 +1111,15 @@ async function extractVisualContext(imageMessages: any[]): Promise<string> {
 
     const dynamicTuning = DynamicParameterTuner.tune({
       userPrompt: userQuestion || 'استيعاب وفهم سياقي تلقائي لمحتوى الصور المرفقة',
-      requestedModel: 'meta/muse-spark-1.3-contributor',
+      requestedModel: 'meta/muse-spark-1.3',
       hasMultimodalImages: true,
     });
 
-    // 1. Primary OpenRouter Vision Gateway (meta/muse-spark-1.3-contributor)
+    // 1. Primary OpenRouter Vision Gateway (meta/muse-spark-1.3)
     if (OPENROUTER_API_KEY) {
       try {
         const sparkPayload = DynamicParameterTuner.tuneGatewayPayload(
-          'meta/muse-spark-1.3-contributor',
+          'meta/muse-spark-1.3',
           {
             messages: formattedVisionItems,
             stream: false,
@@ -1156,7 +1156,7 @@ async function extractVisualContext(imageMessages: any[]): Promise<string> {
     if (OPENROUTER_API_KEY) {
       try {
         const visionPayload = DynamicParameterTuner.tuneGatewayPayload(
-          'meta/muse-spark-1.2-contributor',
+          'meta/muse-spark-1.2',
           {
             messages: formattedVisionItems,
             stream: false,
@@ -2008,7 +2008,7 @@ export default async function handler(req: Request): Promise<Response> {
     return /(?:youtube\.com|youtu\.be|yt\.be|tiktok\.com|douyin\.com|instagram\.com\/(?:reel|p|tv)|instagr\.am|fb\.watch|facebook\.com\/(?:watch|reel|.*\/videos)|twitter\.com\/.*\/status|x\.com\/.*\/status|\.mp4|\.webm|\.m4a|\.mp3|\.wav)/i.test(text);
   }) || Boolean(explicitTargetUrl && /(?:youtube\.com|youtu\.be|yt\.be|tiktok\.com|douyin\.com|instagram\.com|instagr\.am|fb\.watch|facebook\.com|twitter\.com|x\.com|\.mp4|\.webm)/i.test(explicitTargetUrl));
 
-  const isMediaSpark = activeModel === 'meta/muse-spark-1.3-contributor' || activeModel === 'meta/muse-spark-1.2-contributor' || activeModel.includes('muse-spark') || activeModel.includes('spark') || hasVideoUrlInConversation;
+  const isMediaSpark = activeModel === 'meta/muse-spark-1.3' || activeModel === 'meta/muse-spark-1.3-contributor' || activeModel === 'meta/muse-spark-1.2' || activeModel === 'meta/muse-spark-1.2-contributor' || activeModel.includes('muse-spark') || activeModel.includes('spark') || hasVideoUrlInConversation;
 
   const baseSystemPrompt = isFathomQuant3
     ? (isEffectiveMatanyMode ? `${SYSTEM_PROMPT_FATHOM_QUANT_3}\n\n${SYSTEM_PROMPT_NSFW_NANO}` : SYSTEM_PROMPT_FATHOM_QUANT_3)
@@ -2482,7 +2482,7 @@ export default async function handler(req: Request): Promise<Response> {
   if (hasMultimodal || isVision) {
     if (OPENROUTER_API_KEY) {
       candidateGateways.push({
-        name: 'OpenRouter Meta Muse Spark 1.3 Contributor Multimodal Vision (meta/muse-spark-1.3-contributor @ openrouter.ai)',
+        name: 'OpenRouter Meta Muse Spark 1.3 Multimodal Vision (meta/muse-spark-1.3 @ openrouter.ai)',
         url: `${OPENROUTER_BASE_URL}/chat/completions`,
         headers: {
           'Content-Type': 'application/json',
@@ -2490,7 +2490,7 @@ export default async function handler(req: Request): Promise<Response> {
           'HTTP-Referer': 'https://matany.one',
           'X-Title': 'Matany AI',
         },
-        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
+        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
       });
       candidateGateways.push({
         name: 'OpenRouter Meta Muse Spark 1.2 Multimodal (Backup)',
@@ -2501,7 +2501,7 @@ export default async function handler(req: Request): Promise<Response> {
           'HTTP-Referer': 'https://matany.one',
           'X-Title': 'Matany AI',
         },
-        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning)
+        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2', basePayload, dynamicTuning)
       });
       candidateGateways.push({
         name: 'OpenRouter Gemini Vision (google/gemini-2.5-flash @ openrouter.ai)',
@@ -2517,7 +2517,7 @@ export default async function handler(req: Request): Promise<Response> {
     }
   } else if (isFathomSearch && OPENROUTER_API_KEY) {
     candidateGateways.push({
-      name: 'OpenRouter Fathom Search Engine (meta/muse-spark-1.3-contributor + web_plugin)',
+      name: 'OpenRouter Fathom Search Engine (meta/muse-spark-1.3 + web_plugin)',
       url: `${OPENROUTER_BASE_URL}/chat/completions`,
       headers: {
         'Content-Type': 'application/json',
@@ -2526,12 +2526,12 @@ export default async function handler(req: Request): Promise<Response> {
         'X-Title': 'Matany AI',
       },
       payload: {
-        ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning),
+        ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning),
         plugins: [{ id: 'web', max_results: 5 }]
       }
     });
     candidateGateways.push({
-      name: 'OpenRouter Fathom Search Engine :online (meta/muse-spark-1.3-contributor:online)',
+      name: 'OpenRouter Fathom Search Engine :online (meta/muse-spark-1.3:online)',
       url: `${OPENROUTER_BASE_URL}/chat/completions`,
       headers: {
         'Content-Type': 'application/json',
@@ -2539,11 +2539,25 @@ export default async function handler(req: Request): Promise<Response> {
         'HTTP-Referer': 'https://matany.one',
         'X-Title': 'Matany AI',
       },
-      payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor:online', basePayload, dynamicTuning)
+      payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3:online', basePayload, dynamicTuning)
+    });
+    candidateGateways.push({
+      name: 'OpenRouter Fathom Search Engine Backup (meta/muse-spark-1.2 + web_plugin)',
+      url: `${OPENROUTER_BASE_URL}/chat/completions`,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://matany.one',
+        'X-Title': 'Matany AI',
+      },
+      payload: {
+        ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2', basePayload, dynamicTuning),
+        plugins: [{ id: 'web', max_results: 5 }]
+      }
     });
   } else if (isMediaSpark && OPENROUTER_API_KEY) {
     candidateGateways.push({
-      name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Fathom Spark Multimodal)',
+      name: 'OpenRouter Meta Muse Spark 1.3 (Fathom Spark Multimodal)',
       url: `${OPENROUTER_BASE_URL}/chat/completions`,
       headers: {
         'Content-Type': 'application/json',
@@ -2551,7 +2565,7 @@ export default async function handler(req: Request): Promise<Response> {
         'HTTP-Referer': 'https://matany.one',
         'X-Title': 'Matany AI',
       },
-      payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
+      payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
     });
     candidateGateways.push({
       name: 'OpenRouter Meta Muse Spark 1.2 Multimodal (Backup)',
@@ -2562,12 +2576,12 @@ export default async function handler(req: Request): Promise<Response> {
         'HTTP-Referer': 'https://matany.one',
         'X-Title': 'Matany AI',
       },
-      payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning)
+      payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2', basePayload, dynamicTuning)
     });
   } else if (isCyber26 || isCyber) {
     if (OPENROUTER_API_KEY) {
       candidateGateways.push({
-        name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Primary Sovereign Fathom Engine)',
+        name: 'OpenRouter Meta Muse Spark 1.3 (Primary Sovereign Fathom Engine)',
         url: `${OPENROUTER_BASE_URL}/chat/completions`,
         headers: {
           'Content-Type': 'application/json',
@@ -2575,10 +2589,10 @@ export default async function handler(req: Request): Promise<Response> {
           'HTTP-Referer': 'https://matany.one',
           'X-Title': 'Matany AI',
         },
-        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
+        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
       });
       candidateGateways.push({
-        name: 'OpenRouter Meta Muse Spark 1.2 Contributor (Backup Sovereign Engine)',
+        name: 'OpenRouter Meta Muse Spark 1.2 (Backup Sovereign Engine)',
         url: `${OPENROUTER_BASE_URL}/chat/completions`,
         headers: {
           'Content-Type': 'application/json',
@@ -2586,13 +2600,13 @@ export default async function handler(req: Request): Promise<Response> {
           'HTTP-Referer': 'https://matany.one',
           'X-Title': 'Matany AI',
         },
-        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning)
+        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2', basePayload, dynamicTuning)
       });
     }
   } else if (isEffectiveMatanyMode) {
     if (OPENROUTER_API_KEY) {
       candidateGateways.push({
-        name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Matany Persona Mode)',
+        name: 'OpenRouter Meta Muse Spark 1.3 (Matany Persona Mode)',
         url: `${OPENROUTER_BASE_URL}/chat/completions`,
         headers: {
           'Content-Type': 'application/json',
@@ -2600,7 +2614,7 @@ export default async function handler(req: Request): Promise<Response> {
           'HTTP-Referer': 'https://matany.one',
           'X-Title': 'Matany AI',
         },
-        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
+        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
       });
       candidateGateways.push({
         name: 'OpenRouter Magnum v4 72B (Matany Persona Backup)',
@@ -2615,10 +2629,10 @@ export default async function handler(req: Request): Promise<Response> {
       });
     }
   } else {
-    // General Text Chat Mode (Quant 3 Flagship Default - Primary: OpenRouter meta/muse-spark-1.3-contributor)
+    // General Text Chat Mode (Quant 3 Flagship Default - Primary: OpenRouter meta/muse-spark-1.3)
     if (OPENROUTER_API_KEY) {
       candidateGateways.push({
-        name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Quant 3 Flagship Primary)',
+        name: 'OpenRouter Meta Muse Spark 1.3 (Quant 3 Flagship Primary)',
         url: `${OPENROUTER_BASE_URL}/chat/completions`,
         headers: {
           'Content-Type': 'application/json',
@@ -2626,10 +2640,10 @@ export default async function handler(req: Request): Promise<Response> {
           'HTTP-Referer': 'https://matany.one',
           'X-Title': 'Matany AI',
         },
-        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
+        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
       });
       candidateGateways.push({
-        name: 'OpenRouter Meta Muse Spark 1.2 Contributor (Quant 3 Flagship Backup)',
+        name: 'OpenRouter Meta Muse Spark 1.2 (Quant 3 Flagship Backup)',
         url: `${OPENROUTER_BASE_URL}/chat/completions`,
         headers: {
           'Content-Type': 'application/json',
@@ -2637,7 +2651,7 @@ export default async function handler(req: Request): Promise<Response> {
           'HTTP-Referer': 'https://matany.one',
           'X-Title': 'Matany AI',
         },
-        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning)
+        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2', basePayload, dynamicTuning)
       });
     }
   }
@@ -2651,7 +2665,7 @@ export default async function handler(req: Request): Promise<Response> {
       const gateTimeoutId = setTimeout(() => gateAbortController.abort(), 12000);
       let resp: Response;
       try {
-        const effectivePayload = { ...gate.payload };
+        const effectivePayload = DynamicParameterTuner.sanitizeForGateway(gate.url, gate.payload);
 
         resp = await fetch(gate.url, {
           method: 'POST',

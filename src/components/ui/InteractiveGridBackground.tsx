@@ -28,7 +28,7 @@ export const InteractiveGridBackground: React.FC<InteractiveGridBackgroundProps>
     ? 'cyber'
     : Boolean(activeModel?.includes('vision'))
     ? 'vision'
-    : (activeModel === 'meta/muse-spark-1.3-contributor' || activeModel === 'meta/muse-spark-1.2-contributor')
+    : (activeModel === 'meta/muse-spark-1.3' || activeModel === 'meta/muse-spark-1.3-contributor' || activeModel === 'meta/muse-spark-1.2' || activeModel === 'meta/muse-spark-1.2-contributor')
     ? 'media'
     : 'fathom';
 

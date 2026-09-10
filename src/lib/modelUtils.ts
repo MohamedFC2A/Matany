@@ -11,6 +11,8 @@ export function getModelDisplayName(model?: string, isMatany?: boolean): string 
       return 'Fathom Cyber Ultra 2.6';
     case 'fathom-search':
       return 'Fathom Search';
+    case 'meta/muse-spark-1.2':
+    case 'meta/muse-spark-1.3':
     case 'meta/muse-spark-1.2-contributor':
     case 'meta/muse-spark-1.3-contributor':
       return 'Fathom Spark';
@@ -33,6 +35,8 @@ export function getModelSubtitle(model?: string, isMatany?: boolean): string {
       return 'تفكير استدلالي وهندسة سيبرانية متقدمة واستنتاج عميق';
     case 'fathom-search':
       return 'محرك البحث والاستقصاء المتشعب، واسترجاع الذاكرة العصبية وفحص وسائط الذكاء الاصطناعي';
+    case 'meta/muse-spark-1.2':
+    case 'meta/muse-spark-1.3':
     case 'meta/muse-spark-1.2-contributor':
     case 'meta/muse-spark-1.3-contributor':
       return 'معالجة الوسائط المتعددة: تفكيك وتحليل المقاطع الصوتية والمرئية';

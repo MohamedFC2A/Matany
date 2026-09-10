@@ -161,11 +161,11 @@ const MainAppContent: React.FC = () => {
   const [cloudChats, setCloudChats] = useState<SupabaseChat[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
 
-  // Model & Chat State (Persistent Smart Preferred Base Model: Fathom Quant 3, Fathom Search, or Fathom Cyber Ultra 2.6)
+  // Model & Chat State (Persistent Smart Preferred Base Model: Fathom Quant 3, Fathom Cyber Ultra 2.6, Fathom Search, or Fathom Spark)
   const [preferredBaseModel, setPreferredBaseModel] = useState<ModelType>(() => {
     try {
       const saved = localStorage.getItem('matany_preferred_base_model');
-      if (saved === 'fathom-quant-3' || saved === 'fathom-search' || saved === 'meta/muse-spark-1.3-contributor') {
+      if (saved === 'fathom-quant-3' || saved === 'fathom-cyber-ultra-2.6' || saved === 'fathom-search' || saved === 'meta/muse-spark-1.3' || saved === 'meta/muse-spark-1.3-contributor') {
         return saved as ModelType;
       }
     } catch (e) {}
@@ -176,7 +176,7 @@ const MainAppContent: React.FC = () => {
 
   const handleSelectModel = (model: ModelType) => {
     setActiveModel(model);
-    if (model === 'fathom-quant-3' || model === 'fathom-search' || model === 'meta/muse-spark-1.3-contributor') {
+    if (model === 'fathom-quant-3' || model === 'fathom-cyber-ultra-2.6' || model === 'fathom-search' || model === 'meta/muse-spark-1.3' || model === 'meta/muse-spark-1.3-contributor') {
       setPreferredBaseModel(model);
       try {
         localStorage.setItem('matany_preferred_base_model', model);
@@ -1410,7 +1410,7 @@ const MainAppContent: React.FC = () => {
                           ? "اسأل Fathom Quant 3، صمم أو عدل صوراً، أو تحكم بالسيرفر السحابي VPS..."
                           : activeModel === 'fathom-search'
                           ? "ابحث واستقصِ بذكاء عبر Fathom Search (ويب، سياق، ذاكرة، وفحص وسائط)..."
-                          : activeModel === 'meta/muse-spark-1.3-contributor' || activeModel === 'meta/muse-spark-1.2-contributor'
+                          : activeModel === 'meta/muse-spark-1.3' || activeModel === 'meta/muse-spark-1.3-contributor' || activeModel === 'meta/muse-spark-1.2' || activeModel === 'meta/muse-spark-1.2-contributor'
                           ? "حلل وسائط، استوعب فيديوهات أو أكواد معقدة..."
                           : isMatanyActive
                           ? "اسأل matany.one في أي شيء..."
