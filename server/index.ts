@@ -1950,12 +1950,10 @@ async function processSingleLinkIntelligence(
         ytResult.title.includes('Deleted video') ||
         ytResult.title.includes('This video is unavailable');
 
-      const isSilentOrVisualOnly = !isActuallyUnavailable && spokenLength === 0;
-
-      if (spokenLength < 50 || isVerificationPrompt || isActuallyUnavailable || isSilentOrVisualOnly || deepSearch) {
+      if (spokenLength < 50 || isVerificationPrompt || isActuallyUnavailable || deepSearch) {
         let cleanSearchQuery = '';
         if (isActuallyUnavailable) {
-          cleanSearchQuery = `${userPrompt} شرب الماء تخزين الماء في الجسم الكلى القلب الكبد حسام موافي`.trim();
+          cleanSearchQuery = `${userPrompt}`.trim();
         } else {
           cleanSearchQuery = `${ytResult.title || ''} ${ytResult.channelName || ''} ${userPrompt}`.trim();
         }
@@ -1964,7 +1962,7 @@ async function processSingleLinkIntelligence(
           try {
             const searchContext = await performUltraDeepCyberSearch(cleanSearchQuery, undefined, signal);
             if (searchContext?.groundingContextBlock) {
-              searchGroundingBlock = `\n\n[استطلاع الفحص الحي وتدقيق الحقائق العلمية والطبية لموضوع الفيديو والادعاء المطروح]:\n${searchContext.groundingContextBlock}`;
+              searchGroundingBlock = `\n\n[استطلاع الفحص الحي وتدقيق الحقائق والمعطيات لموضوع الفيديو والادعاء المطروح]:\n${searchContext.groundingContextBlock}`;
             }
           } catch {}
         }
@@ -1972,9 +1970,11 @@ async function processSingleLinkIntelligence(
 
       let intelligenceDirective = '';
       if (isActuallyUnavailable) {
-        intelligenceDirective = `\n\n[تنبيه استخباراتي]: هذا الرابط المحدد غير متاح حالياً على سيرفرات يوتيوب (محذوف أو خاص أو الرابط غير صالح). المطلوب منك: وضّح للمستخدم بلباقة أن الرابط غير متوفر حالياً على يوتيوب، ثم أجب مباشرة وبكل تفصيل على سؤاله وافحص الحقيقة العلمية والطبية للادعاء الشائع المرتبط بشرب الماء ووظائف الأعضاء واستشهاده بالآية الكريمة دون أي توقف أو اعتذار مجرد.`;
-      } else if (isSilentOrVisualOnly) {
-        intelligenceDirective = `\n\n[فيديو يعتمد على المحتوى البصري / الحيوانات / المؤثرات]: هذا الفيديو متاح بنجاح بعنوان "${ytResult.title}" من قناة "${ytResult.channelName || 'صانع المحتوى'}". لا يحتوي الفيديو على كلام منطوق مفرغ بل يعتمد على المشاهد والمؤثرات البصرية. المطلوب منك: الإجابة على سؤال المستخدم بدقة استناداً إلى سياق مقاطع قناة "${ytResult.channelName}" وموضوع الفيديو الظاهر في العنوان ونتائج البحث الحي المرفقة (مثل نوع الكائن وما يأكله وتصرفاته) دون أي ادعاء خاطئ بأن الفيديو محذوف.`;
+        intelligenceDirective = `\n\n[تنبيه استخباراتي]: هذا الرابط المحدد غير متوفر حالياً على خوادم يوتيوب (قد يكون محذوفاً أو خاصاً أو الرابط غير صالح). المطلوب منك: وضّح للمستخدم بلباقة حالة الرابط ثم أجب مباشرة وبكل تفصيل على سؤاله وسياق الموضوع المطروح بالاعتماد على المعرفة العامة والبحث المرفق دون أي توقف أو اعتذار مجرد.`;
+      } else if (spokenLength > 0 || (ytResult.rawSpokenText && ytResult.rawSpokenText.length > 0)) {
+        intelligenceDirective = `\n\n[توجيه استخباراتي لمحتوى الفيديو]: الفيديو متاح بعنوان "${ytResult.title}" من قناة "${ytResult.channelName || 'صانع المحتوى'}". تتوفر معطيات الشرح الكامل والتفريغ الصوتي وفصول الفيديو والنقاط التقنية ونتائج البحث الحي أعلاه. المطلوب منك: تقديم إجابة شاملة ومباشرة ودقيقة وتفصيلية تجيب عن سؤال المستخدم وتغطي كافة محاور ومواضيع الفيديو بأسلوب علمي ومنظم دون أي ادعاء خاطئ بأن الفيديو صامت أو بدون صوت أو مجرد مؤثرات.`;
+      } else {
+        intelligenceDirective = `\n\n[توجيه استخباراتي لمحتوى الفيديو]: الفيديو متاح بعنوان "${ytResult.title}" من قناة "${ytResult.channelName || 'صانع المحتوى'}". المطلوب منك: الإجابة على سؤال المستخدم بدقة استناداً إلى موضوع الفيديو والبحث المرفق وسياق القناة بأسلوب مفصل وشامل.`;
       }
 
       const masterBlock = buildMasterVideoIntelligenceBlock(

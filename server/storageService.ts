@@ -270,8 +270,17 @@ export async function executeResilientImageGeneration(
   let lastDetails = '';
 
   if (apiKey) {
+    const overallStartTime = Date.now();
+    const MAX_TOTAL_BUDGET_MS = 21000; // Strictly under Vercel Gateway 25s limit
+
     for (const candidateModel of candidateModels) {
-      const timeoutMs = 14000;
+      const elapsed = Date.now() - overallStartTime;
+      if (elapsed >= MAX_TOTAL_BUDGET_MS) {
+        console.warn(`[resilient-image] Overall budget exhausted (${elapsed}ms). Breaking to prevent 504 gateway timeout.`);
+        break;
+      }
+      const remainingBudget = MAX_TOTAL_BUDGET_MS - elapsed;
+      const timeoutMs = Math.min(10000, remainingBudget);
 
       const attemptGeneration = async (includeRefs: boolean): Promise<any> => {
         const controller = new AbortController();

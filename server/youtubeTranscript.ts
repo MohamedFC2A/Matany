@@ -125,10 +125,70 @@ export function extractYouTubeUrlFromText(text: string): string | null {
   return null;
 }
 
-interface OEmbedMeta { title?: string; author_name?: string; thumbnail_url?: string; description?: string; }
+interface OEmbedMeta {
+  title?: string;
+  author_name?: string;
+  thumbnail_url?: string;
+  description?: string;
+  durationSeconds?: number;
+  keywords?: string[];
+}
 
 async function fetchVideoMeta(videoId: string): Promise<OEmbedMeta> {
-  // 1. YouTube official oEmbed (watch)
+  // 1. Direct YouTube Watch Page extraction (highest fidelity: full description, author, title, chapters)
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept-Language': 'ar,en-US;q=0.9,en;q=0.8'
+      }
+    });
+    clearTimeout(timer);
+    if (res.ok) {
+      const html = await res.text();
+      const match = html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\});/s);
+      if (match) {
+        try {
+          const playerData = JSON.parse(match[1]);
+          const details = playerData?.videoDetails;
+          if (details?.title) {
+            return {
+              title: details.title,
+              author_name: details.author || details.ownerChannelName,
+              description: details.shortDescription || '',
+              durationSeconds: details.lengthSeconds ? parseInt(details.lengthSeconds, 10) : undefined,
+              keywords: details.keywords || [],
+              thumbnail_url: details.thumbnail?.thumbnails?.slice(-1)[0]?.url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+            };
+          }
+        } catch {}
+      }
+
+      const ogTitle = html.match(/<meta\s+property=["']og:title["']\s+content=["'](.*?)["']/i)?.[1]
+        || html.match(/<title>(.*?)<\/title>/i)?.[1]?.replace(/\s*-\s*YouTube$/i, '');
+      const ogDesc = html.match(/<meta\s+property=["']og:description["']\s+content=["'](.*?)["']/i)?.[1]
+        || html.match(/<meta\s+name=["']description["']\s+content=["'](.*?)["']/i)?.[1];
+      const author = html.match(/<link\s+itemprop=["']name["']\s+content=["'](.*?)["']/i)?.[1]
+        || html.match(/"author":\s*"(.*?)"/i)?.[1]
+        || html.match(/"ownerChannelName":\s*"(.*?)"/i)?.[1];
+      const thumb = html.match(/<meta\s+property=["']og:image["']\s+content=["'](.*?)["']/i)?.[1]
+        || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+      if (ogTitle && !ogTitle.includes('- YouTube')) {
+        return {
+          title: ogTitle,
+          author_name: author,
+          description: ogDesc || '',
+          thumbnail_url: thumb
+        };
+      }
+    }
+  } catch {}
+
+  // 2. YouTube official oEmbed (watch)
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 3500);
@@ -143,7 +203,7 @@ async function fetchVideoMeta(videoId: string): Promise<OEmbedMeta> {
     }
   } catch {}
 
-  // 2. YouTube official oEmbed (shorts)
+  // 3. YouTube official oEmbed (shorts)
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 3500);
@@ -158,7 +218,7 @@ async function fetchVideoMeta(videoId: string): Promise<OEmbedMeta> {
     }
   } catch {}
 
-  // 3. noembed fallback
+  // 4. noembed fallback
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 3500);
@@ -178,42 +238,6 @@ async function fetchVideoMeta(videoId: string): Promise<OEmbedMeta> {
       }
     }
   } catch {}
-
-  // 4. Direct HTML meta tag scraping (for Shorts, mobile & age-gated embeds)
-  for (const pageUrl of [`https://www.youtube.com/watch?v=${videoId}`, `https://www.youtube.com/shorts/${videoId}`]) {
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 4000);
-      const res = await fetch(pageUrl, {
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-          'Accept-Language': 'ar,en-US;q=0.9,en;q=0.8'
-        }
-      });
-      clearTimeout(timer);
-      if (res.ok) {
-        const html = await res.text();
-        const ogTitle = html.match(/<meta\s+property=["']og:title["']\s+content=["'](.*?)["']/i)?.[1]
-          || html.match(/<title>(.*?)<\/title>/i)?.[1]?.replace(/\s*-\s*YouTube$/i, '');
-        const ogDesc = html.match(/<meta\s+property=["']og:description["']\s+content=["'](.*?)["']/i)?.[1];
-        const author = html.match(/<link\s+itemprop=["']name["']\s+content=["'](.*?)["']/i)?.[1]
-          || html.match(/"author":\s*"(.*?)"/i)?.[1]
-          || html.match(/"ownerChannelName":\s*"(.*?)"/i)?.[1];
-        const thumb = html.match(/<meta\s+property=["']og:image["']\s+content=["'](.*?)["']/i)?.[1]
-          || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-
-        if (ogTitle && !ogTitle.includes('- YouTube')) {
-          return {
-            title: ogTitle,
-            author_name: author,
-            description: ogDesc,
-            thumbnail_url: thumb
-          };
-        }
-      }
-    } catch {}
-  }
 
   return {
     thumbnail_url: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
@@ -308,6 +332,52 @@ interface DirectScrapedCaptions {
   language: string;
   isAutoGenerated: boolean;
   arabicTranslationText?: string;
+  meta?: OEmbedMeta;
+}
+
+/**
+ * Parses timestamped chapters from video descriptions (e.g. "0:00 Intro", "1:43 Architecture")
+ */
+export function parseChaptersFromDescription(description: string): TimestampedBlock[] {
+  if (!description) return [];
+  const lines = description.split(/\r?\n/);
+  const rawChapters: { seconds: number; timeStr: string; text: string }[] = [];
+  const timeRegex = /(?:^|\s)(\d{1,2}:\d{2}(?::\d{2})?)\s*[-–—:]?\s*(.+)$/;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const match = line.match(timeRegex);
+    if (match) {
+      const timeStr = match[1];
+      const text = match[2].trim();
+      const parts = timeStr.split(':').map(Number);
+      let seconds = 0;
+      if (parts.length === 3) {
+        seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+      } else if (parts.length === 2) {
+        seconds = parts[0] * 60 + parts[1];
+      }
+      rawChapters.push({ seconds, timeStr, text });
+    }
+  }
+
+  if (rawChapters.length === 0) return [];
+
+  const blocks: TimestampedBlock[] = [];
+  for (let i = 0; i < rawChapters.length; i++) {
+    const curr = rawChapters[i];
+    const next = rawChapters[i + 1];
+    const endSeconds = next ? next.seconds : curr.seconds + 180;
+    const endFormatted = formatTime(endSeconds);
+    blocks.push({
+      timeRange: `${curr.timeStr} - ${endFormatted}`,
+      startSeconds: curr.seconds,
+      endSeconds: endSeconds,
+      speechText: `[فصل: ${curr.text}]`
+    });
+  }
+  return blocks;
 }
 
 async function scrapeCaptionsDirectly(videoId: string): Promise<DirectScrapedCaptions | null> {
@@ -332,10 +402,23 @@ async function scrapeCaptionsDirectly(videoId: string): Promise<DirectScrapedCap
     if (!match) return null;
 
     const playerData = JSON.parse(match[1]);
+    const details = playerData?.videoDetails;
+    let metaFromPlayer: OEmbedMeta | undefined;
+    if (details?.title) {
+      metaFromPlayer = {
+        title: details.title,
+        author_name: details.author || details.ownerChannelName,
+        description: details.shortDescription || '',
+        durationSeconds: details.lengthSeconds ? parseInt(details.lengthSeconds, 10) : undefined,
+        keywords: details.keywords || [],
+        thumbnail_url: details.thumbnail?.thumbnails?.slice(-1)[0]?.url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+      };
+    }
+
     const captionTracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
 
     if (!Array.isArray(captionTracks) || captionTracks.length === 0) {
-      return null;
+      return metaFromPlayer ? { segments: [], language: 'ar', isAutoGenerated: false, meta: metaFromPlayer } : null;
     }
 
     // Language priority:
@@ -351,7 +434,9 @@ async function scrapeCaptionsDirectly(videoId: string): Promise<DirectScrapedCap
       captionTracks.find((t: any) => t.languageCode === 'en' || t.languageCode?.startsWith('en')) ||
       captionTracks[0];
 
-    if (!chosenTrack || !chosenTrack.baseUrl) return null;
+    if (!chosenTrack || !chosenTrack.baseUrl) {
+      return metaFromPlayer ? { segments: [], language: 'ar', isAutoGenerated: false, meta: metaFromPlayer } : null;
+    }
 
     const isAuto = chosenTrack.kind === 'asr';
     const lang = chosenTrack.languageCode || 'unknown';
@@ -365,7 +450,9 @@ async function scrapeCaptionsDirectly(videoId: string): Promise<DirectScrapedCap
     } finally {
       clearTimeout(trackTimer);
     }
-    if (!trackRes.ok) return null;
+    if (!trackRes.ok) {
+      return metaFromPlayer ? { segments: [], language: lang, isAutoGenerated: isAuto, meta: metaFromPlayer } : null;
+    }
     const xml = await trackRes.text();
 
     const segments: TranscriptSegment[] = [];
@@ -386,7 +473,9 @@ async function scrapeCaptionsDirectly(videoId: string): Promise<DirectScrapedCap
       }
     }
 
-    if (segments.length === 0) return null;
+    if (segments.length === 0) {
+      return metaFromPlayer ? { segments: [], language: lang, isAutoGenerated: isAuto, meta: metaFromPlayer } : null;
+    }
 
     // If original speech is not Arabic, attempt fetching the Arabic auto-translate track
     let arabicTranslationText = '';
@@ -424,6 +513,7 @@ async function scrapeCaptionsDirectly(videoId: string): Promise<DirectScrapedCap
       language: lang,
       isAutoGenerated: isAuto,
       arabicTranslationText: arabicTranslationText || undefined,
+      meta: metaFromPlayer,
     };
   } catch {
     return null;
@@ -440,7 +530,9 @@ async function tryFetchTranscriptLib(
 ): Promise<{ segments: TranscriptSegment[]; lang: string } | null> {
   for (const lang of langs) {
     try {
-      const raw = await YoutubeTranscript.fetchTranscript(videoId, { lang });
+      const fetchPromise = YoutubeTranscript.fetchTranscript(videoId, { lang });
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
+      const raw = await Promise.race([fetchPromise, timeoutPromise]) as any[];
       if (raw && raw.length > 0) {
         return {
           segments: raw.map((s: any) => ({
@@ -452,10 +544,8 @@ async function tryFetchTranscriptLib(
           lang,
         };
       }
-    } catch (err: any) {
-      const msg = (err?.message || '').toLowerCase();
-      if (msg.includes('no transcript') || msg.includes('not available') || msg.includes('language')) continue;
-      throw err;
+    } catch {
+      continue;
     }
   }
   return null;
@@ -478,7 +568,7 @@ export async function fetchYouTubeTranscript(
     return cached;
   }
 
-  // 2. Fetch oEmbed metadata and speech transcript concurrently
+  // 2. Fetch metadata and speech transcript concurrently
   let meta: OEmbedMeta = {};
   let speechData: {
     segments: TranscriptSegment[];
@@ -509,7 +599,14 @@ export async function fetchYouTubeTranscript(
         scrapeCaptionsDirectly(videoId)
       ]);
 
-      const localMeta = metaResult || {};
+      const localMeta = {
+        ...(scrapedDirect?.meta || {}),
+        ...(metaResult || {}),
+        description: scrapedDirect?.meta?.description || metaResult?.description || '',
+        title: scrapedDirect?.meta?.title || metaResult?.title || '',
+        author_name: scrapedDirect?.meta?.author_name || metaResult?.author_name || '',
+      };
+
       let localSpeech: {
         segments: TranscriptSegment[];
         language: string;
@@ -525,18 +622,22 @@ export async function fetchYouTubeTranscript(
         console.log(`[YouTubeTranscript] Direct scraping missed, falling back to library for: ${videoId}`);
         let libResult = await tryFetchTranscriptLib(videoId, PREFERRED_LANGS);
         if (!libResult) {
-          const raw = await YoutubeTranscript.fetchTranscript(videoId);
-          if (raw && raw.length > 0) {
-            libResult = {
-              segments: raw.map((s: any) => ({
-                text: cleanSpokenText(s.text),
-                offset: s.offset,
-                duration: s.duration,
-                lang: s.lang || 'auto',
-              })).filter((s: any) => Boolean(s.text)),
-              lang: raw[0]?.lang || 'auto',
-            };
-          }
+          try {
+            const rawPromise = YoutubeTranscript.fetchTranscript(videoId);
+            const rawTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
+            const raw = await Promise.race([rawPromise, rawTimeout]) as any[];
+            if (raw && raw.length > 0) {
+              libResult = {
+                segments: raw.map((s: any) => ({
+                  text: cleanSpokenText(s.text),
+                  offset: s.offset,
+                  duration: s.duration,
+                  lang: s.lang || 'auto',
+                })).filter((s: any) => Boolean(s.text)),
+                lang: raw[0]?.lang || 'auto',
+              };
+            }
+          } catch {}
         }
 
         if (libResult && libResult.segments.length > 0) {
@@ -572,23 +673,31 @@ export async function fetchYouTubeTranscript(
     const title = meta?.title || 'فيديو يوتيوب';
     const channelName = meta?.author_name || 'صانع المحتوى';
     const fallbackDesc = meta?.description || '';
+    const chapterBlocks = parseChaptersFromDescription(fallbackDesc);
+
+    const timestampedBlocks: TimestampedBlock[] = chapterBlocks.length > 0
+      ? chapterBlocks
+      : fallbackDesc
+      ? [{
+          timeRange: '00:00 - 05:00',
+          startSeconds: 0,
+          endSeconds: 300,
+          speechText: fallbackDesc
+        }]
+      : [];
+
     const fallbackResult: YouTubeTranscriptResult = {
       videoId,
       videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
       thumbnailUrl: meta?.thumbnail_url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
       title,
       channelName,
-      durationSeconds: undefined,
+      durationSeconds: meta?.durationSeconds,
       language: 'ar',
       isAutoGenerated: false,
       rawSpokenText: fallbackDesc,
       arabicTranslationText: undefined,
-      timestampedBlocks: fallbackDesc ? [{
-        timeRange: '00:00 - 01:00',
-        startSeconds: 0,
-        endSeconds: 60,
-        speechText: fallbackDesc
-      }] : [],
+      timestampedBlocks,
       segments: [],
       wordCount: fallbackDesc.split(/\s+/).filter(Boolean).length,
       charCount: fallbackDesc.length,

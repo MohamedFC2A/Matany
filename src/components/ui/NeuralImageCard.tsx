@@ -348,20 +348,36 @@ export const NeuralImageCardComponent: React.FC<NeuralImageCardProps> = ({
         messageId: messageId || undefined
       };
 
+      const fetchWithResilience = async (url: string, payload: any, attempts = 2): Promise<Response | null> => {
+        for (let attempt = 0; attempt < attempts; attempt++) {
+          try {
+            return await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+              signal: controller.signal
+            });
+          } catch (fetchErr: any) {
+            if (fetchErr.name === 'AbortError') throw fetchErr;
+            if (attempt < attempts - 1) {
+              await new Promise((r) => setTimeout(r, 350));
+              continue;
+            }
+            throw fetchErr;
+          }
+        }
+        return null;
+      };
+
       try {
-        const res = await fetch('/api/generate-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestPayload),
-          signal: controller.signal
-        });
-        if (res.ok) {
+        const res = await fetchWithResilience('/api/generate-image', requestPayload);
+        if (res && res.ok) {
           const json = await res.json();
           if (json?.imageUrl) {
             return json;
           }
         }
-        if (res.status === 413) {
+        if (res && res.status === 413) {
           console.warn('[NeuralImageCard] HTTP 413 detected on /api/generate-image, payload too large.');
           throw new Error('HTTP 413: Payload too large');
         }
@@ -371,13 +387,8 @@ export const NeuralImageCardComponent: React.FC<NeuralImageCardProps> = ({
       }
 
       try {
-        const fallbackRes = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestPayload),
-          signal: controller.signal
-        });
-        if (fallbackRes.ok) {
+        const fallbackRes = await fetchWithResilience('/api/chat', requestPayload);
+        if (fallbackRes && fallbackRes.ok) {
           const json = await fallbackRes.json();
           if (json?.imageUrl) return json;
         }
@@ -387,13 +398,8 @@ export const NeuralImageCardComponent: React.FC<NeuralImageCardProps> = ({
 
       // 3. Autonomous Sovereign Visual Processing Fallback (Guarantees 100% Visual Processing Success)
       try {
-        const retryRes = await fetch('/api/generate-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...requestPayload, forceFallback: true }),
-          signal: controller.signal
-        });
-        if (retryRes.ok) {
+        const retryRes = await fetchWithResilience('/api/generate-image', { ...requestPayload, forceFallback: true });
+        if (retryRes && retryRes.ok) {
           const json = await retryRes.json();
           if (json?.imageUrl) return json;
         }

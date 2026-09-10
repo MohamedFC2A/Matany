@@ -1622,9 +1622,21 @@ export async function scrapeYouTubeDeep(url: string): Promise<DeepLinkScrapeResu
 
       if (pageRes.ok) {
         const pageHtml = await pageRes.text();
-        const descMatch = pageHtml.match(/"shortDescription"\s*:\s*"([^"]+)"/i);
-        if (descMatch?.[1]) {
-          description = descMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+        const playerMatch = pageHtml.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\});/s);
+        if (playerMatch) {
+          try {
+            const pData = JSON.parse(playerMatch[1]);
+            if (pData?.videoDetails?.title) title = pData.videoDetails.title;
+            if (pData?.videoDetails?.author) channelName = pData.videoDetails.author;
+            if (pData?.videoDetails?.shortDescription) description = pData.videoDetails.shortDescription;
+          } catch {}
+        }
+
+        if (!description) {
+          const descMatch = pageHtml.match(/"shortDescription"\s*:\s*"([^"]+)"/i);
+          if (descMatch?.[1]) {
+            description = descMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+          }
         }
 
         // Extract comments from ytInitialData

@@ -493,7 +493,7 @@ export function buildMasterVideoIntelligenceBlock(
     parts.push(`\n${bar}`);
     parts.push(`\n[2. التفريغ الصوتي الحرفي لكلام المتحدث بالطوابع الزمنية [MM:SS]]:\n`);
     if (Array.isArray(transcriptResult.timestampedBlocks) && transcriptResult.timestampedBlocks.length > 0) {
-      const spokenPreview = transcriptResult.timestampedBlocks.slice(0, 15).map((b: any) => `[${b.timeRange}] ${b.speechText}`).join('\n\n');
+      const spokenPreview = transcriptResult.timestampedBlocks.slice(0, 40).map((b: any) => `[${b.timeRange}] ${b.speechText}`).join('\n\n');
       parts.push(spokenPreview);
     } else if (transcriptResult.formattedCaptionsWithTimestamps) {
       parts.push(transcriptResult.formattedCaptionsWithTimestamps);

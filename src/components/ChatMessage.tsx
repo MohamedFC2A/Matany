@@ -189,21 +189,8 @@ const SingleLinkCard: React.FC<SingleLinkCardProps> = ({ url, linkIndex, onConfi
 
   if (isVideo) {
     return (
-      <div className={cn(
-        "relative overflow-hidden rounded-2xl border shadow-2xl p-3 sm:p-3.5 text-right animate-in fade-in duration-200 group/videocard",
-        videoPlatform === 'tiktok' ? "border-cyan-500/30 bg-black/85" :
-        videoPlatform === 'instagram' ? "border-pink-500/30 bg-black/85" :
-        videoPlatform === 'facebook' ? "border-blue-500/30 bg-black/85" :
-        videoPlatform === 'twitter' ? "border-zinc-500/30 bg-black/85" :
-        "border-red-500/30 bg-black/85"
-      )}>
-        {thumbnailUrl && (
-          <div
-            className="absolute inset-0 bg-cover bg-center blur-2xl opacity-35 scale-125 pointer-events-none transition-all duration-700 select-none"
-            style={{ backgroundImage: `url(${thumbnailUrl})` }}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/80 to-black/60 pointer-events-none" />
+      <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] hover:border-white/[0.16] bg-[#07080b]/85 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.6),inset_0_1px_1px_0_rgba(255,255,255,0.06)] p-3 sm:p-3.5 text-right animate-in fade-in duration-200 group/videocard transition-all duration-300">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] via-transparent to-black/40 pointer-events-none" />
 
         {/* Video Card Header with Number Badge */}
         <div className="relative z-10 flex items-center justify-between pb-2 mb-2 border-b border-white/[0.08]">
@@ -213,28 +200,14 @@ const SingleLinkCard: React.FC<SingleLinkCardProps> = ({ url, linkIndex, onConfi
                 {linkIndex}
               </span>
             )}
-            <div className={cn(
-              "size-5 rounded-md flex items-center justify-center border",
-              videoPlatform === 'tiktok' ? "bg-cyan-500/20 border-cyan-500/30 text-cyan-400" :
-              videoPlatform === 'instagram' ? "bg-pink-500/20 border-pink-500/30 text-pink-400" :
-              videoPlatform === 'facebook' ? "bg-blue-600/20 border-blue-500/30 text-blue-400" :
-              videoPlatform === 'twitter' ? "bg-zinc-700/30 border-zinc-500/30 text-zinc-300" :
-              "bg-red-600/20 border-red-500/30 text-red-400"
-            )}>
+            <div className="size-5 rounded-md flex items-center justify-center border border-white/[0.12] bg-white/[0.06] text-zinc-200 shadow-sm backdrop-blur-md">
               <Play className="size-2.5 fill-current" />
             </div>
             <span>{platformTitle}</span>
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className={cn(
-              "text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border flex items-center gap-1",
-              videoPlatform === 'tiktok' ? "bg-cyan-500/15 text-cyan-300 border-cyan-500/30" :
-              videoPlatform === 'instagram' ? "bg-pink-500/15 text-pink-300 border-pink-500/30" :
-              videoPlatform === 'facebook' ? "bg-blue-600/20 text-blue-300 border-blue-500/30" :
-              videoPlatform === 'twitter' ? "bg-zinc-700/40 text-zinc-200 border-zinc-500/30" :
-              "bg-red-600/20 text-red-300 border-red-500/30"
-            )}>
+            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border border-white/[0.10] bg-white/[0.05] text-zinc-300 flex items-center gap-1 shadow-sm backdrop-blur-md">
               <PlatformLogo url={targetUrl} className="size-3" size={12} />
               <span className="uppercase">{videoPlatform}</span>
             </span>
@@ -245,17 +218,10 @@ const SingleLinkCard: React.FC<SingleLinkCardProps> = ({ url, linkIndex, onConfi
         <button
           type="button"
           onClick={() => onConfirmUrl(displayUrl || url)}
-          className={cn(
-            "relative z-10 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border transition-all cursor-pointer shadow-lg backdrop-blur-md w-full text-right",
-            videoPlatform === 'tiktok' ? "border-white/[0.10] hover:border-cyan-500/40" :
-            videoPlatform === 'instagram' ? "border-white/[0.10] hover:border-pink-500/40" :
-            videoPlatform === 'facebook' ? "border-white/[0.10] hover:border-blue-500/40" :
-            videoPlatform === 'twitter' ? "border-white/[0.10] hover:border-zinc-400/40" :
-            "border-white/[0.10] hover:border-red-500/40"
-          )}
+          className="relative z-10 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center p-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] hover:border-white/[0.16] transition-all cursor-pointer shadow-inner backdrop-blur-md w-full text-right"
         >
           <div className={cn(
-            "relative shrink-0 rounded-lg overflow-hidden border border-white/[0.15] bg-zinc-950 shadow-md group-hover/videocard:scale-[1.02] transition-transform",
+            "relative shrink-0 rounded-lg overflow-hidden border border-white/[0.12] bg-zinc-950 shadow-md group-hover/videocard:scale-[1.01] transition-transform",
             (videoPlatform === 'tiktok' || videoPlatform === 'instagram') ? "aspect-[9/16] sm:w-28 sm:h-36 mx-auto sm:mx-0" : "aspect-video sm:w-44"
           )}>
             {thumbnailUrl ? (
@@ -270,29 +236,15 @@ const SingleLinkCard: React.FC<SingleLinkCardProps> = ({ url, linkIndex, onConfi
                 <Video className="size-6 text-zinc-400" />
               </div>
             )}
-            <div className="absolute inset-0 bg-black/25 group-hover/videocard:bg-black/10 transition-colors flex items-center justify-center">
-              <div className={cn(
-                "size-8 rounded-full text-white flex items-center justify-center shadow-xl group-hover/videocard:scale-110 transition-transform",
-                videoPlatform === 'tiktok' ? "bg-cyan-500/90 text-black" :
-                videoPlatform === 'instagram' ? "bg-gradient-to-tr from-amber-500 via-pink-600 to-purple-600 text-white" :
-                videoPlatform === 'facebook' ? "bg-blue-600 text-white" :
-                videoPlatform === 'twitter' ? "bg-zinc-800 border border-white/20 text-white" :
-                "bg-red-600 text-white"
-              )}>
+            <div className="absolute inset-0 bg-black/35 group-hover/videocard:bg-black/15 transition-colors flex items-center justify-center">
+              <div className="size-8 rounded-full text-white flex items-center justify-center shadow-xl group-hover/videocard:scale-110 transition-transform bg-black/60 border border-white/20 backdrop-blur-md">
                 <Play className="size-3.5 fill-current ml-0.5" />
               </div>
             </div>
           </div>
 
           <div className="flex flex-col justify-center flex-1 min-w-0 text-right gap-1 py-0.5">
-            <h4 className={cn(
-              "text-xs sm:text-sm font-bold text-white line-clamp-2 leading-snug transition-colors font-sans",
-              videoPlatform === 'tiktok' ? "group-hover/videocard:text-cyan-200" :
-              videoPlatform === 'instagram' ? "group-hover/videocard:text-pink-200" :
-              videoPlatform === 'facebook' ? "group-hover/videocard:text-blue-200" :
-              videoPlatform === 'twitter' ? "group-hover/videocard:text-zinc-200" :
-              "group-hover/videocard:text-red-200"
-            )} title={resolvedInfo?.title || ''}>
+            <h4 className="text-xs sm:text-sm font-bold text-zinc-100 group-hover/videocard:text-white line-clamp-2 leading-snug transition-colors font-sans" title={resolvedInfo?.title || ''}>
               {resolvedInfo?.title || 'جاري استخراج تفاصيل ومحتوى الفيديو...'}
             </h4>
             {resolvedInfo?.videoMetadata?.authorName && (
@@ -302,14 +254,7 @@ const SingleLinkCard: React.FC<SingleLinkCardProps> = ({ url, linkIndex, onConfi
               </p>
             )}
             <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-mono mt-1 dir-ltr text-left">
-              <ExternalLink className={cn(
-                "size-3 shrink-0",
-                videoPlatform === 'tiktok' ? "text-cyan-400" :
-                videoPlatform === 'instagram' ? "text-pink-400" :
-                videoPlatform === 'facebook' ? "text-blue-400" :
-                videoPlatform === 'twitter' ? "text-zinc-300" :
-                "text-red-400"
-              )} />
+              <ExternalLink className="size-3 shrink-0 text-zinc-400 group-hover/videocard:text-zinc-200" />
               <span className="truncate text-zinc-300 group-hover/videocard:underline">{displayUrl}</span>
             </div>
           </div>
@@ -321,20 +266,8 @@ const SingleLinkCard: React.FC<SingleLinkCardProps> = ({ url, linkIndex, onConfi
   // Social Post Card (Facebook Post, Instagram Post, X Post)
   if (isSocialPost) {
     return (
-      <div className={cn(
-        "relative overflow-hidden rounded-2xl border shadow-2xl p-3 sm:p-3.5 text-right animate-in fade-in duration-200 group/postcard",
-        videoPlatform === 'facebook' ? "border-blue-500/30 bg-black/85" :
-        videoPlatform === 'instagram' ? "border-pink-500/30 bg-black/85" :
-        videoPlatform === 'twitter' ? "border-zinc-500/30 bg-black/85" :
-        "border-cyan-500/30 bg-black/85"
-      )}>
-        {thumbnailUrl && (
-          <div
-            className="absolute inset-0 bg-cover bg-center blur-2xl opacity-30 scale-125 pointer-events-none transition-all duration-700 select-none"
-            style={{ backgroundImage: `url(${thumbnailUrl})` }}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/80 to-black/60 pointer-events-none" />
+      <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] hover:border-white/[0.16] bg-[#07080b]/85 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.6),inset_0_1px_1px_0_rgba(255,255,255,0.06)] p-3 sm:p-3.5 text-right animate-in fade-in duration-200 group/postcard transition-all duration-300">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] via-transparent to-black/40 pointer-events-none" />
 
         {/* Post Card Header */}
         <div className="relative z-10 flex items-center justify-between pb-2 mb-2 border-b border-white/[0.08]">
@@ -344,13 +277,7 @@ const SingleLinkCard: React.FC<SingleLinkCardProps> = ({ url, linkIndex, onConfi
                 {linkIndex}
               </span>
             )}
-            <div className={cn(
-              "size-5 rounded-md flex items-center justify-center border",
-              videoPlatform === 'facebook' ? "bg-blue-600/20 border-blue-500/30 text-blue-400" :
-              videoPlatform === 'instagram' ? "bg-pink-500/20 border-pink-500/30 text-pink-400" :
-              videoPlatform === 'twitter' ? "bg-zinc-700/30 border-zinc-500/30 text-zinc-300" :
-              "bg-cyan-600/20 border-cyan-500/30 text-cyan-400"
-            )}>
+            <div className="size-5 rounded-md flex items-center justify-center border border-white/[0.12] bg-white/[0.06] text-zinc-200 shadow-sm backdrop-blur-md">
               <FileText className="size-3" />
             </div>
             <span>{platformTitle}</span>
@@ -358,18 +285,12 @@ const SingleLinkCard: React.FC<SingleLinkCardProps> = ({ url, linkIndex, onConfi
 
           <div className="flex items-center gap-1.5">
             {isResolving ? (
-              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border bg-blue-500/15 text-blue-300 border-blue-500/30 font-bold flex items-center gap-1 animate-pulse">
+              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-white/[0.15] bg-white/[0.06] text-zinc-300 font-bold flex items-center gap-1 animate-pulse backdrop-blur-md">
                 <Loader2 className="w-2.5 h-2.5 animate-spin" />
                 <span>SCRAPING...</span>
               </span>
             ) : (
-              <span className={cn(
-                "text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border flex items-center gap-1",
-                videoPlatform === 'facebook' ? "bg-blue-600/20 text-blue-300 border-blue-500/30" :
-                videoPlatform === 'instagram' ? "bg-pink-500/15 text-pink-300 border-pink-500/30" :
-                videoPlatform === 'twitter' ? "bg-zinc-700/40 text-zinc-200 border-zinc-500/30" :
-                "bg-cyan-600/20 text-cyan-300 border-cyan-500/30"
-              )}>
+              <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border border-white/[0.10] bg-white/[0.05] text-zinc-300 flex items-center gap-1 shadow-sm backdrop-blur-md">
                 <PlatformLogo url={targetUrl} className="size-3" size={12} />
                 <span className="uppercase">{videoPlatform}</span>
               </span>
@@ -381,16 +302,10 @@ const SingleLinkCard: React.FC<SingleLinkCardProps> = ({ url, linkIndex, onConfi
         <button
           type="button"
           onClick={() => onConfirmUrl(displayUrl || url)}
-          className={cn(
-            "relative z-10 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border transition-all cursor-pointer shadow-lg backdrop-blur-md w-full text-right",
-            videoPlatform === 'facebook' ? "border-white/[0.10] hover:border-blue-500/40" :
-            videoPlatform === 'instagram' ? "border-white/[0.10] hover:border-pink-500/40" :
-            videoPlatform === 'twitter' ? "border-white/[0.10] hover:border-zinc-400/40" :
-            "border-white/[0.10] hover:border-cyan-500/40"
-          )}
+          className="relative z-10 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center p-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] hover:border-white/[0.16] transition-all cursor-pointer shadow-inner backdrop-blur-md w-full text-right"
         >
           {thumbnailUrl ? (
-            <div className="relative shrink-0 rounded-lg overflow-hidden border border-white/[0.15] bg-zinc-950 shadow-md group-hover/postcard:scale-[1.02] transition-transform aspect-video sm:w-36 h-24">
+            <div className="relative shrink-0 rounded-lg overflow-hidden border border-white/[0.12] bg-zinc-950 shadow-md group-hover/postcard:scale-[1.01] transition-transform aspect-video sm:w-36 h-24">
               <img
                 src={thumbnailUrl}
                 alt={resolvedInfo?.title || 'Post Image'}
@@ -399,19 +314,13 @@ const SingleLinkCard: React.FC<SingleLinkCardProps> = ({ url, linkIndex, onConfi
               />
             </div>
           ) : (
-            <div className="size-10 sm:size-12 rounded-xl bg-zinc-950/80 border border-white/[0.15] flex items-center justify-center shrink-0 shadow-md backdrop-blur-md">
+            <div className="size-10 sm:size-12 rounded-xl bg-zinc-950/80 border border-white/[0.12] flex items-center justify-center shrink-0 shadow-md backdrop-blur-md">
               <PlatformLogo url={targetUrl} className="size-6" size={24} />
             </div>
           )}
 
           <div className="flex flex-col justify-center flex-1 min-w-0 text-right gap-1 py-0.5">
-            <h4 className={cn(
-              "text-xs sm:text-sm font-bold text-white line-clamp-2 leading-snug transition-colors font-sans",
-              videoPlatform === 'facebook' ? "group-hover/postcard:text-blue-200" :
-              videoPlatform === 'instagram' ? "group-hover/postcard:text-pink-200" :
-              videoPlatform === 'twitter' ? "group-hover/postcard:text-zinc-200" :
-              "group-hover/postcard:text-cyan-200"
-            )} title={resolvedInfo?.title || ''}>
+            <h4 className="text-xs sm:text-sm font-bold text-zinc-100 group-hover/postcard:text-white line-clamp-2 leading-snug transition-colors font-sans" title={resolvedInfo?.title || ''}>
               {resolvedInfo?.title || 'جاري استخراج تفاصيل ومحتوى المنشور...'}
             </h4>
             {resolvedInfo?.videoMetadata?.authorName && (
@@ -421,13 +330,7 @@ const SingleLinkCard: React.FC<SingleLinkCardProps> = ({ url, linkIndex, onConfi
               </p>
             )}
             <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-mono mt-1 dir-ltr text-left">
-              <ExternalLink className={cn(
-                "size-3 shrink-0",
-                videoPlatform === 'facebook' ? "text-blue-400" :
-                videoPlatform === 'instagram' ? "text-pink-400" :
-                videoPlatform === 'twitter' ? "text-zinc-300" :
-                "text-cyan-400"
-              )} />
+              <ExternalLink className="size-3 shrink-0 text-zinc-400 group-hover/postcard:text-zinc-200" />
               <span className="truncate text-zinc-300 group-hover/postcard:underline">{displayUrl}</span>
             </div>
           </div>
@@ -438,7 +341,7 @@ const SingleLinkCard: React.FC<SingleLinkCardProps> = ({ url, linkIndex, onConfi
 
   // Standard Website Card
   return (
-    <div className="flex flex-col gap-1.5 p-2.5 sm:p-3 rounded-xl bg-white/[0.03] border border-white/[0.12] text-right animate-in fade-in duration-150 backdrop-blur-2xl shadow-xl">
+    <div className="flex flex-col gap-1.5 p-2.5 sm:p-3 rounded-2xl bg-[#07080b]/85 border border-white/[0.08] hover:border-white/[0.16] text-right animate-in fade-in duration-150 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.6),inset_0_1px_1px_0_rgba(255,255,255,0.06)] transition-all duration-300">
       <div className="flex items-center justify-between text-[11px] text-zinc-300 font-medium">
         <span className="flex items-center gap-2 font-sans font-semibold text-zinc-200">
           {typeof linkIndex === 'number' && (
@@ -452,7 +355,7 @@ const SingleLinkCard: React.FC<SingleLinkCardProps> = ({ url, linkIndex, onConfi
           </span>
         </span>
         {isResolving && (
-          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border bg-cyan-500/15 text-cyan-300 border-cyan-500/30 font-bold flex items-center gap-1 animate-pulse">
+          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-white/[0.15] bg-white/[0.06] text-zinc-300 font-bold flex items-center gap-1 animate-pulse backdrop-blur-md">
             <Loader2 className="w-2.5 h-2.5 animate-spin" />
             <span>UNSHORTENING...</span>
           </span>
@@ -461,7 +364,7 @@ const SingleLinkCard: React.FC<SingleLinkCardProps> = ({ url, linkIndex, onConfi
       <button
         type="button"
         onClick={() => onConfirmUrl(displayUrl || url)}
-        className="flex items-center justify-between gap-2.5 bg-black/60 hover:bg-black/80 p-2 sm:p-2.5 rounded-lg border border-white/[0.08] hover:border-white/[0.22] mt-0.5 shadow-inner w-full text-right cursor-pointer transition-all group/target backdrop-blur-md"
+        className="flex items-center justify-between gap-2.5 bg-white/[0.03] hover:bg-white/[0.07] p-2 sm:p-2.5 rounded-xl border border-white/[0.07] hover:border-white/[0.16] mt-0.5 shadow-inner w-full text-right cursor-pointer transition-all group/target backdrop-blur-md"
       >
         <div className="size-7 rounded-xl bg-zinc-950/80 border border-white/[0.12] flex items-center justify-center overflow-hidden shrink-0 shadow-sm backdrop-blur-md">
           <PlatformLogo url={displayUrl || url || ''} className="size-4" size={16} />
@@ -1976,12 +1879,6 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             </span>
           )}
 
-          {(isMedia || hasVideoLinks || message.model === 'meta/muse-spark-1.3-contributor' || message.model === 'meta/muse-spark-1.2-contributor') && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-sans font-medium px-2 py-0.5 rounded bg-violet-500/10 text-violet-300 border border-violet-500/20 select-none">
-              <FathomSparkIcon size={11} />
-              <span>FATHOM SPARK</span>
-            </span>
-          )}
         </div>
         <span className="text-[11px] font-mono text-zinc-400 font-medium tracking-wide shrink-0" dir="ltr">{normalizeDisplayTimestamp(message.timestamp)}</span>
       </div>
