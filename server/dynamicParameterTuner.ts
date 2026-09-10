@@ -62,6 +62,7 @@ export interface TunedHyperparameters {
   // Official DeepSeek API Architecture (https://api-docs.deepseek.com/guides/thinking_mode)
   reasoning_effort?: 'low' | 'high' | 'max';
   thinking_mode?: 'enabled' | 'disabled';
+  max_thinking_tokens?: number;
   stream_options?: { include_usage: boolean };
 }
 
@@ -112,6 +113,7 @@ export interface DynamicTuningResult {
     maxTokens: number;
     reasoningEffort?: 'low' | 'high' | 'max';
     thinkingMode?: 'enabled' | 'disabled';
+    maxThinkingTokens?: number;
     timestamp: number;
   };
 }
@@ -229,6 +231,18 @@ const EXPLICIT_CREATIVE_FRAMING = [
 
 const GREETING_PATTERNS = [
   /^(مرحبا|اهلا|اهلاً|صباح\s*الخير|مساء\s*الخير|سلام\s*عليكم|السلام\s*عليكم|هاي|ازيك|عامل\s*ايه|كيف\s*حالك|hello|hi|hey|good\s+morning|good\s+evening)([\s,،]+(كيف\s*حالك|عامل\s*ايه|ازيك|اليوم|يا\s*(?:غالي|صديقي|بطل)|how\s+are\s+you|today|there))*\s*[.!؟?]?$/i
+];
+
+export const SIMPLE_ARITHMETIC_PATTERN = /^(?:(?:احسب|أحسب|احسبلي|احسب\s*لي|أوجد\s*الناتج|أوجد\s*ناتج|كم\s*يساوي|كم|ناتج|حساب)\s+)?(?:-?\d+(?:\.\d+)?\s*(?:[\+\-\*\/×÷\^]|زائد|ناقص|في|على|ضرب|قسمة)\s*)+-?\d+(?:\.\d+)?\s*[؟?]?$/i;
+
+export const TRIVIAL_DIRECT_QA_PATTERNS = [
+  /^(?:ما\s*(?:هي|هو)?\s*عاصمة\s+[\p{L}\s]+)[؟?]?$/iu,
+  /^(?:من\s*(?:هو|هي)?\s*(?:رئيس|مخترع|مؤسس|مكتشف|ملك|أمير|حاكم|مؤلف|كاتب|شاعر)\s+[\p{L}\s]+)[؟?]?$/iu,
+  /^(?:ما\s*(?:معنى|تعريف|مرادف|ضد|مضاد)\s+(?:كلمة\s+)?[\p{L}\s]+)[؟?]?$/iu,
+  /^(?:كم\s*(?:عدد|عمر|سعر|ساعة|يوم|شهر|سنة|طول|وزن|مسافة|درجة)\s+[\p{L}\s]+)[؟?]?$/iu,
+  /^(?:أين\s*تقع|اين\s*تقع|في\s*أي\s*بلد|في\s*اي\s*دولة)\s+[\p{L}\s]+[؟?]?$/iu,
+  /^(?:من\s*أنت|من\s*انت|ما\s*اسمك|عرفني\s*بنفسك|ماذا\s*تستطيع\s*أن\s*تفعل|من\s*مطورك|من\s*صنعك)[؟?]?$/iu,
+  /^(?:شكرا|شكراً|ألف\s*شكر|تسلم|يعطيك\s*العافية|تمام|أوكي|اوكي|تمام\s*جداً|ممتاز|عظيم|جميل|حسناً|حسنا|أكمل|اكمل|نعم|لا)[.!؟?]?$/iu,
 ];
 
 export class DynamicParameterTuner {
@@ -614,7 +628,17 @@ export class DynamicParameterTuner {
       })
       .filter(Boolean);
     const historyText = historySnippets.join(' ');
-    const isFollowUpPrompt = text.length < 120 || /(وضح|اشرح|أكمل|أصلح|صلح|كيف|تابع|المزيد|تفاصيل|خطوة|explain|clarify|continue|fix|more|step)/i.test(text);
+
+    const isTrivialOrDirect =
+      GREETING_PATTERNS.some(p => p.test(text)) ||
+      SIMPLE_ARITHMETIC_PATTERN.test(text) ||
+      TRIVIAL_DIRECT_QA_PATTERNS.some(p => p.test(text)) ||
+      (text.length < 60 && /^(?:ما\s*(?:هي|هو|اسم|معنى|تعريف)|من\s*(?:هو|هي)|أين\s*تقع|اين\s*تقع|كم\s*(?:عدد|عمر|يساوي)|متى\s*(?:ولد|توفي|تأسس))\b/i.test(text));
+
+    const isFollowUpPrompt = !isTrivialOrDirect && (
+      text.length < 120 ||
+      /(وضح|اشرح|أكمل|اكمل|أصلح|صلح|كيف|تابع|المزيد|تفاصيل|خطوة|explain|clarify|continue|fix|more|step)/i.test(text)
+    );
 
     // 0. GPAENG Sovereign Diagnostic Trigger Check (Instant Absolute Priority)
     if (/\bGPAENG\b/i.test(text)) {
@@ -709,14 +733,14 @@ export class DynamicParameterTuner {
       };
     }
 
-    // 2. Pure Greeting / Casual check (only when no technical prompt follows)
-    if (GREETING_PATTERNS.some(p => p.test(text))) {
+    // 2. Pure Greeting / Simple Arithmetic / Trivial Direct QA (Sub-Second Latency & Zero Reasoning Stall)
+    if (isTrivialOrDirect) {
       return {
         intent: 'GENERAL_CONVERSATION_AND_QUICK_QA',
         confidence: 0.99,
         complexity: 'LIGHT',
         hallucinationRisk: 'LOW',
-        rationale: 'Casual greeting or pleasantry without analytical constraints.'
+        rationale: 'Trivial/direct query or greeting calibrated for instantaneous sub-second response without reasoning latency.'
       };
     }
 
@@ -837,12 +861,17 @@ export class DynamicParameterTuner {
     const matchesMath = MATH_DEDUCTIVE_LOGIC_PATTERNS.some(p => p.test(text)) ||
       (isFollowUpPrompt && MATH_DEDUCTIVE_LOGIC_PATTERNS.some(p => p.test(historyText)));
     if (matchesMath) {
+      const isSimpleMath = SIMPLE_ARITHMETIC_PATTERN.test(text) ||
+        (!/(تكامل|تفاضل|مفارقة|نسبية|أفق\s*حدث|ثقب\s*أسود|سرعة\s*الضوء|ساعة\s*بيولوجية|برهان|proof|theorem|نظرية|اينشتاين|شرودنجر|كوانتم|integral|differential|relativity)/i.test(text) && text.length < 80);
+
       return {
-        intent: 'MATHEMATICAL_AND_DEDUCTIVE_LOGIC',
+        intent: isSimpleMath ? 'GENERAL_CONVERSATION_AND_QUICK_QA' : 'MATHEMATICAL_AND_DEDUCTIVE_LOGIC',
         confidence: 0.96,
-        complexity: 'DEEP_ANALYTICAL',
-        hallucinationRisk: 'EXTREME',
-        rationale: 'Formal deductive logic puzzle, mathematical derivation, or theoretical physics constraint.'
+        complexity: isSimpleMath ? 'LIGHT' : 'DEEP_ANALYTICAL',
+        hallucinationRisk: isSimpleMath ? 'LOW' : 'EXTREME',
+        rationale: isSimpleMath
+          ? 'Simple arithmetic calculation calibrated for immediate sub-second result.'
+          : 'Formal deductive logic puzzle, mathematical derivation, or theoretical physics constraint.'
       };
     }
 
@@ -1140,21 +1169,30 @@ export class DynamicParameterTuner {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // DEEPSEEK OFFICIAL THINKING MODE & EFFORT CALIBRATION
+    // DEEPSEEK & OPENROUTER OFFICIAL THINKING MODE & EFFORT CALIBRATION
     // (Extracted from https://api-docs.deepseek.com/guides/thinking_mode)
     // ─────────────────────────────────────────────────────────────────────────
     let thinking_mode: 'enabled' | 'disabled' = 'enabled';
     let reasoning_effort: 'low' | 'high' | 'max' = 'high';
+    let max_thinking_tokens: number = 8192;
 
     if (intent === 'SVG_VECTOR_STUDIO_AND_DESIGN' || intent === 'NEURAL_IMAGE_STUDIO_AND_PROCESSING') {
       // SVG Studio & Neural Image Studio strictly enforce direct deliverable generation; disabling thinking mode
       // saves thousands of tokens and delivers instantaneous deliverable rendering.
       thinking_mode = 'disabled';
       reasoning_effort = 'low';
+      max_thinking_tokens = 0;
     } else if (complexity === 'LIGHT' || intent === 'GENERAL_CONVERSATION_AND_QUICK_QA') {
-      // Light queries / greetings: minimal reasoning effort for sub-second TTFT and peak token economy
+      // Light queries / greetings / simple arithmetic: minimal reasoning effort with strict 256-token thinking budget
+      // to guarantee instant sub-second TTFT and eliminate unnecessary reasoning loops
       thinking_mode = 'enabled';
       reasoning_effort = 'low';
+      max_thinking_tokens = 256;
+      max_tokens = Math.min(max_tokens, 4096);
+    } else if (complexity === 'STANDARD') {
+      thinking_mode = 'enabled';
+      reasoning_effort = 'low';
+      max_thinking_tokens = 2048;
     } else if (
       modelFamily === 'deepseek-reasoner' ||
       complexity === 'EXHAUSTIVE_ARCHITECTURAL' ||
@@ -1164,10 +1202,12 @@ export class DynamicParameterTuner {
       // Deep deductive chains: maximal reasoning effort for exhaustive audits & mathematical rigor
       thinking_mode = 'enabled';
       reasoning_effort = 'max';
+      max_thinking_tokens = 16384;
     } else {
       // Standard tasks: optimal high reasoning effort
       thinking_mode = 'enabled';
       reasoning_effort = 'high';
+      max_thinking_tokens = 8192;
     }
 
     // Apply explicit temperature override if specified within safe limits
@@ -1185,6 +1225,7 @@ export class DynamicParameterTuner {
       stream: true,
       reasoning_effort,
       thinking_mode,
+      max_thinking_tokens,
       stream_options: { include_usage: true }
     };
   }
@@ -1356,13 +1397,18 @@ export class DynamicParameterTuner {
 
     const target = intentLabelMap[intent] || intentLabelMap.GENERAL_CONVERSATION_AND_QUICK_QA;
 
+    const isLight = complexity === 'LIGHT' || intent === 'GENERAL_CONVERSATION_AND_QUICK_QA';
+    const thinkingClause = isLight
+      ? '1. للأسئلة المباشرة، البسيطة، الحسابية، أو الحوارية: يُحظر التفكير المطول ويجب إغلاق الوسم </think> فوراً في أقل من سطر أو سطرين خاطفين (أقل من 20 كلمة) أو البدء فوراً بالإجابة لتحقيق أعلى سرعة استجابة فائقة (Sub-Second Latency).'
+      : '1. فكّر أولاً بعمق وهدوء باللغة العربية داخل وسم <think>...</think> لتنظيم وتفكيك المعطيات منطقياً بما يتناسب مع حجم المسألة.';
+
     return `
 [توجيه المعايرة التلقائية وجودة الإخراج — COGNITIVE ALIGNMENT DIRECTIVE]:
 • نمط الإجابة والمسار: [${target.ar}] (${target.mode})
 • التوجيه الصارم:
   ${target.directive}
 • ضوابط الإخراج وكفاءة التوكنس (Token Economy & Zero Preamble):
-  1. فكّر أولاً بعمق وهدوء باللغة العربية داخل وسم <think>...</think> لتنظيم وتفكيك المعطيات منطقياً.
+  ${thinkingClause}
   2. بعد إغلاق الوسم </think>، قدّم إجابتك فوراً بصلب الموضوع باللغة العربية الفصحى المعاصرة.
   3. حظر مطلق لأي مقدمات استهلاكية أو عبارات مجاملة (مثل "أهلاً بك"، "حسناً"، "بالتأكيد"، "يسعدني"). ابدأ مباشرة بالإجابة أو الكود أو الجدول المطلوب لتحقيق أقصى كثافة معلوماتية لكل توكن.
   4. حظر مطلق لاستخدام أي إيموجي (No Unicode Emojis).
@@ -1425,6 +1471,7 @@ export class DynamicParameterTuner {
         maxTokens: hyperparameters.max_tokens,
         reasoningEffort: hyperparameters.reasoning_effort,
         thinkingMode: hyperparameters.thinking_mode,
+        maxThinkingTokens: hyperparameters.max_thinking_tokens,
         timestamp: Date.now()
       }
     };
@@ -1467,12 +1514,12 @@ export class DynamicParameterTuner {
       candidateFamily === 'deepseek-vision' ||
       candidateModel.toLowerCase().includes('deepseek');
 
-    if (isDeepSeekFamily) {
-      // 1. KVCache Isolation & Scheduling Isolation (regex ^[a-zA-Z0-9\-_]+$, max 512 chars)
-      const rawUserId = String(basePayload?.user_id || tuningResult?.telemetry?.model || 'matany-client');
-      const sanitizedUserId = rawUserId.replace(/[^a-zA-Z0-9\-_]/g, '').slice(0, 128) || 'matany-user';
-      payload.user_id = sanitizedUserId;
+    // 1. KVCache Isolation & Scheduling Isolation (regex ^[a-zA-Z0-9\-_]+$, max 512 chars)
+    const rawUserId = String(basePayload?.user_id || tuningResult?.telemetry?.model || 'matany-client');
+    const sanitizedUserId = rawUserId.replace(/[^a-zA-Z0-9\-_]/g, '').slice(0, 128) || 'matany-user';
+    payload.user_id = sanitizedUserId;
 
+    if (isDeepSeekFamily) {
       // 2. stream_options for KV-cache hit/miss token usage telemetry
       if (payload.stream !== false) {
         payload.stream_options = { include_usage: true };
@@ -1481,11 +1528,17 @@ export class DynamicParameterTuner {
       // 3. Thinking Mode & Reasoning Effort
       const thinkingMode = candidateParams.thinking_mode || 'enabled';
       const reasoningEffort = candidateParams.reasoning_effort || 'high';
+      const maxThinkingTokens = candidateParams.max_thinking_tokens;
+
+      const thinkingObj: any = { type: thinkingMode };
+      if (thinkingMode === 'enabled' && typeof maxThinkingTokens === 'number' && maxThinkingTokens > 0) {
+        thinkingObj.budget_tokens = maxThinkingTokens;
+      }
 
       payload.extra_body = {
         ...(payload.extra_body || {}),
         user_id: sanitizedUserId,
-        thinking: { type: thinkingMode }
+        thinking: thinkingObj
       };
 
       if (candidateFamily === 'deepseek-reasoner') {
@@ -1496,10 +1549,15 @@ export class DynamicParameterTuner {
         delete payload.presence_penalty;
         payload.reasoning_effort = reasoningEffort;
         payload.extra_body.reasoning_effort = reasoningEffort;
+        payload.reasoning = {
+          effort: reasoningEffort,
+          ...(typeof maxThinkingTokens === 'number' && maxThinkingTokens > 0 ? { max_tokens: maxThinkingTokens } : {})
+        };
       } else if (thinkingMode === 'disabled') {
         // Thinking disabled (e.g. SVG Studio instant vector output)
         delete payload.reasoning_effort;
         delete payload.extra_body.reasoning_effort;
+        delete payload.reasoning;
         payload.temperature = candidateParams.temperature;
         payload.top_p = candidateParams.top_p;
         if (candidateParams.frequency_penalty > 0) {
@@ -1512,6 +1570,10 @@ export class DynamicParameterTuner {
         // Standard DeepSeek models with thinking capability
         payload.reasoning_effort = reasoningEffort;
         payload.extra_body.reasoning_effort = reasoningEffort;
+        payload.reasoning = {
+          effort: reasoningEffort,
+          ...(typeof maxThinkingTokens === 'number' && maxThinkingTokens > 0 ? { max_tokens: maxThinkingTokens } : {})
+        };
         payload.temperature = candidateParams.temperature;
         payload.top_p = candidateParams.top_p;
         if (candidateParams.frequency_penalty > 0) {
@@ -1530,6 +1592,33 @@ export class DynamicParameterTuner {
       }
       if (candidateParams.presence_penalty > 0) {
         payload.presence_penalty = candidateParams.presence_penalty;
+      }
+
+      const thinkingMode = candidateParams.thinking_mode || 'enabled';
+      const reasoningEffort = candidateParams.reasoning_effort || 'high';
+      const maxThinkingTokens = candidateParams.max_thinking_tokens;
+
+      if (thinkingMode === 'disabled') {
+        payload.extra_body = {
+          ...(payload.extra_body || {}),
+          user_id: sanitizedUserId,
+          thinking: { type: 'disabled' }
+        };
+      } else {
+        payload.reasoning_effort = reasoningEffort;
+        payload.reasoning = {
+          effort: reasoningEffort,
+          ...(typeof maxThinkingTokens === 'number' && maxThinkingTokens > 0 ? { max_tokens: maxThinkingTokens } : {})
+        };
+        payload.extra_body = {
+          ...(payload.extra_body || {}),
+          user_id: sanitizedUserId,
+          reasoning_effort: reasoningEffort,
+          thinking: {
+            type: thinkingMode,
+            ...(typeof maxThinkingTokens === 'number' && maxThinkingTokens > 0 ? { budget_tokens: maxThinkingTokens } : {})
+          }
+        };
       }
 
       // Fathom Search (Qwen 3.7 Flash) Web Search integration

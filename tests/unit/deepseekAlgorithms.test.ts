@@ -48,11 +48,52 @@ export async function runDeepSeekAlgorithmsTests(harness: TestHarness) {
       const result = DynamicParameterTuner.tune(request);
       expect(result.hyperparameters.thinking_mode).toBe('enabled');
       expect(result.hyperparameters.reasoning_effort).toBe('low');
+      expect(result.hyperparameters.max_thinking_tokens).toBe(256);
 
       const payload = DynamicParameterTuner.tuneGatewayPayload('deepseek-v4-flash', {}, result);
       expect(payload.reasoning_effort).toBe('low');
       expect(payload.extra_body?.reasoning_effort).toBe('low');
       expect(payload.extra_body?.thinking?.type).toBe('enabled');
+      expect(payload.extra_body?.thinking?.budget_tokens).toBe(256);
+      expect(payload.reasoning?.effort).toBe('low');
+      expect(payload.reasoning?.max_tokens).toBe(256);
+    });
+
+    // 2b. Trivial Query Sub-Second Latency & Isolation under Prior Conversation History
+    await harness.it('should strictly isolate trivial questions (1+1, capital of Egypt) from prior technical history and enforce 256-token thinking budget', () => {
+      const priorHistory = [
+        { role: 'user', content: 'حلل ثغرة DPoP Proof Replay عبر Envoy Gateway مع بايلود PoC حقيقي' },
+        { role: 'assistant', content: 'تم تحليل ثغرة DPoP وهندسة الترقيع الأمني...' }
+      ];
+
+      // Arithmetic query with history
+      const mathTrivial = DynamicParameterTuner.tune({
+        userPrompt: '1+1',
+        requestedModel: 'deepseek-v4-pro',
+        conversationHistory: priorHistory
+      });
+      expect(mathTrivial.detectedIntent).toBe('GENERAL_CONVERSATION_AND_QUICK_QA');
+      expect(mathTrivial.complexityLevel).toBe('LIGHT');
+      expect(mathTrivial.hyperparameters.reasoning_effort).toBe('low');
+      expect(mathTrivial.hyperparameters.max_thinking_tokens).toBe(256);
+
+      // Direct factual query with history
+      const factTrivial = DynamicParameterTuner.tune({
+        userPrompt: 'ما هي عاصمة مصر؟',
+        requestedModel: 'meta/muse-spark-1.3-contributor',
+        conversationHistory: priorHistory
+      });
+      expect(factTrivial.detectedIntent).toBe('GENERAL_CONVERSATION_AND_QUICK_QA');
+      expect(factTrivial.complexityLevel).toBe('LIGHT');
+      expect(factTrivial.hyperparameters.reasoning_effort).toBe('low');
+
+      // Verify payload enforces low reasoning effort and 256 budget tokens for OpenRouter Muse Spark
+      const sparkPayload = DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', {}, factTrivial);
+      expect(sparkPayload.reasoning_effort).toBe('low');
+      expect(sparkPayload.reasoning?.effort).toBe('low');
+      expect(sparkPayload.reasoning?.max_tokens).toBe(256);
+      expect(sparkPayload.extra_body?.thinking?.budget_tokens).toBe(256);
+      expect(sparkPayload.extra_body?.reasoning_effort).toBe('low');
     });
 
     // 3. Thinking Effort Calibration: Cybersecurity & Mathematical Deductive Logic
