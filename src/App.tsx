@@ -182,13 +182,12 @@ const MainAppContent: React.FC = () => {
   const [activeModel, setActiveModel] = useState<ModelType>(preferredBaseModel);
 
   const handleSelectModel = (model: ModelType) => {
-    if (model === 'fathom-its-1') {
-      navigateTo('fathom-its');
-      return;
-    }
     const effectiveModel = model === 'meta/muse-spark-1.3' ? 'meta/muse-spark-1.3-contributor' : model;
     setActiveModel(effectiveModel);
-    if (effectiveModel === 'fathom-quant-3' || effectiveModel === 'fathom-cyber-ultra-2.6') {
+    if (viewMode !== 'chat') {
+      navigateTo('chat');
+    }
+    if (effectiveModel === 'fathom-quant-3' || effectiveModel === 'fathom-cyber-ultra-2.6' || effectiveModel === 'fathom-its-1') {
       setPreferredBaseModel(effectiveModel);
       try {
         localStorage.setItem('matany_preferred_base_model', effectiveModel);
@@ -1319,7 +1318,7 @@ const MainAppContent: React.FC = () => {
           <TopBar
             isMatanyActive={isMatanyActive}
             activeModel={activeModel}
-            onSelectModel={setActiveModel}
+            onSelectModel={handleSelectModel}
             user={user}
             currentView={viewMode === 'privacy' || viewMode === 'terms' ? 'chat' : viewMode}
             currentChatTokens={currentChatTokens}
@@ -1334,7 +1333,10 @@ const MainAppContent: React.FC = () => {
             onNavigateToLimits={() => navigateTo('limits')}
             onNavigateToProfile={() => navigateTo('profile')}
             onNavigateToChat={() => navigateTo('chat')}
-            onNavigateToFathomITS={() => navigateTo('fathom-its')}
+            onNavigateToFathomITS={() => {
+              handleSelectModel('fathom-its-1');
+              navigateTo('chat');
+            }}
           />
 
           {/* Dynamic Page Views Container */}

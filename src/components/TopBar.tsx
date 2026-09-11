@@ -36,6 +36,8 @@ interface TopBarProps {
 
 export const TopBar: React.FC<TopBarProps> = ({
   currentView = 'chat',
+  activeModel,
+  onSelectModel,
   cloudChatsCount = 0,
   onOpenSidebar,
   onNewChat,
@@ -47,6 +49,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onNavigateToFathomITS,
 }) => {
   const isSecondaryPage = currentView !== 'chat' && currentView !== 'landing';
+  const isFathomITSActive = activeModel === 'fathom-its-1' || currentView === 'fathom-its';
 
   const getViewTitle = () => {
     switch (currentView) {
@@ -79,11 +82,11 @@ export const TopBar: React.FC<TopBarProps> = ({
             type="button"
             onClick={onNavigateToFathomITS}
             className={`md:hidden flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-              currentView === 'fathom-its'
+              isFathomITSActive
                 ? 'bg-white/15 border-white/25 text-white font-bold'
                 : 'bg-white/[0.04] border-white/[0.07] text-zinc-300 hover:text-white'
             }`}
-            title="منظومة Fathom ITS 1 التعليمية"
+            title="نموذج Fathom ITS 1 التعليمي"
           >
             <GraduationCap className="w-3.5 h-3.5" />
             <span className="font-mono text-[11px]">Fathom ITS</span>
@@ -105,14 +108,14 @@ export const TopBar: React.FC<TopBarProps> = ({
             type="button"
             onClick={onNavigateToFathomITS}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-              currentView === 'fathom-its'
+              isFathomITSActive
                 ? 'bg-white/[0.14] border border-white/[0.22] text-white shadow-[0_2px_12px_rgba(0,0,0,0.5)] font-bold'
                 : 'text-zinc-300 hover:text-white hover:bg-white/[0.05] border border-white/[0.05]'
             }`}
           >
             <GraduationCap className="w-3.5 h-3.5 text-zinc-200" />
             <span className="font-mono font-bold tracking-tight">Fathom ITS 1</span>
-            <span className="px-1.5 py-0.5 rounded text-[9px] font-sans bg-white/10 text-zinc-200">المنظومة التعليمية</span>
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-sans bg-white/10 text-zinc-200">التعليم الذكي</span>
           </button>
 
           <button

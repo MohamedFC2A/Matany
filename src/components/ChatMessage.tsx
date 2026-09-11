@@ -6,7 +6,7 @@ import rehypeKatex from 'rehype-katex';
 import { highlightCode } from '@/lib/syntaxHighlighter';
 import { ChatMessageItem, ResolvedLinkInfo } from '../types';
 import ChatReasoning from './ui/chat-reasoning';
-import { Check, Copy, Flame, X, ShieldCheck, Sparkles, Camera, ExternalLink, Globe, PhoneCall, Phone, Mail, Zap, Loader2, Play, Pause, Video, Music, FileText, FileCode, FileType, Clock, RotateCcw, Bell, Trash2, Calendar, CheckCircle2, FileSearch } from 'lucide-react';
+import { Check, Copy, Flame, X, ShieldCheck, Sparkles, Camera, ExternalLink, Globe, PhoneCall, Phone, Mail, Zap, Loader2, Play, Pause, Video, Music, FileText, FileCode, FileType, Clock, RotateCcw, Bell, Trash2, Calendar, CheckCircle2, FileSearch, Volume2, VolumeX } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { detectAndExtractUrl, extractAllCleanUrls, getFaviconUrl, extractYouTubeVideoId, getYouTubeThumbnailUrl, normalizeDisplayTimestamp, cleanMarkdownForClipboard, sanitizeMarkdownDisplay, cn } from '@/lib/utils';
 import { formatMediaDuration, formatFileSize } from '@/lib/mediaExtractor';
@@ -24,6 +24,10 @@ import { DownloadButton } from './ui/DownloadButton';
 import { SvgStudioCard } from './ui/SvgStudioCard';
 import { NeuralImageCard, isValidImageUri, type NeuralImageData } from './ui/NeuralImageCard';
 import { VpsControlRoomCard } from './ui/VpsControlRoomCard';
+import { MsqQuizCard } from './ui/MsqQuizCard';
+import { ActiveCorrectionCard } from './ui/ActiveCorrectionCard';
+import { ItsProgressBadge } from './ui/ItsProgressBadge';
+import { FathomITSSoundManager } from './FathomITS/FathomITSSoundManager';
 import { Quant3PerfectionIcon } from './ui/Quant3PerfectionIcon';
 import { isVpsOrCloudRequest } from '@/lib/vpsUtils';
 import { getActiveDetectedFeatures, MemoryDetectIcon, TimeDetectIcon, AiDetectIcon, MetadataDetectIcon, DownloadDetectIcon, SvgStudioIcon, NeuralImageStudioIcon, FathomSparkIcon, VpsControlRoomIcon } from '@/lib/featuresRegistry';
@@ -1126,12 +1130,53 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const [confirmUrl, setConfirmUrl] = useState<string | null>(null);
   const [confirmPhone, setConfirmPhone] = useState<string | null>(null);
   const [confirmEmail, setConfirmEmail] = useState<string | null>(null);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
 
   const handleCopy = () => {
     const cleanText = cleanMarkdownForClipboard(displayContent);
     navigator.clipboard.writeText(cleanText || displayContent);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleToggleSpeech = async () => {
+    if (isPlayingAudio) {
+      FathomITSSoundManager.stopCurrentAudio();
+      setIsPlayingAudio(false);
+      return;
+    }
+    setIsLoadingAudio(true);
+    let speechText = (displayContent || '')
+      .replace(/```[\s\S]*?```/gi, '')
+      .replace(/<think>[\s\S]*?<\/think>/gi, '')
+      .replace(/\[.*?\]/g, '')
+      .trim();
+
+    // Extract English dialogue parts if present
+    const paragraphs = speechText.split(/\n+/);
+    const englishParts = paragraphs.filter(p => /[a-zA-Z]{3,}/.test(p));
+    const targetText = englishParts.length > 0 ? englishParts.join(' ') : speechText;
+    const cleanDialogue = targetText.replace(/[*_#`]/g, '').trim().slice(0, 1000);
+
+    if (!cleanDialogue) {
+      setIsLoadingAudio(false);
+      return;
+    }
+    const defaultVoiceId = 'JBFqnCBsd6RMkjVDRZzb'; // George (British Native Voice)
+    await FathomITSSoundManager.speakText(cleanDialogue, defaultVoiceId, {
+      onStart: () => {
+        setIsLoadingAudio(false);
+        setIsPlayingAudio(true);
+      },
+      onEnd: () => {
+        setIsPlayingAudio(false);
+      },
+      onError: () => {
+        setIsLoadingAudio(false);
+        setIsPlayingAudio(false);
+      }
+    });
   };
 
   // Sanitize and extract any raw think tags or reasoning blocks that leaked into content
@@ -1468,12 +1513,80 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
     return null;
   }, [displayContent, activeFeatures, message.id, message.image, message.images, priorImage]);
 
-  // Clean markdown content excluding both SVG and Neural Image blocks to prevent layout thrashing
+  // Stable first-class MSQ Quiz item extraction
+  const extractedMsqData = useMemo(() => {
+    if (!displayContent) return null;
+    const match = /```(?:msq|its-msq|quiz)\s*(\{[\s\S]*?\})\s*```/i.exec(displayContent);
+    if (!match) return null;
+    try {
+      const parsed = JSON.parse(match[1]);
+      if (parsed && parsed.question && Array.isArray(parsed.options)) {
+        return {
+          id: `msq-${message.id || Date.now()}`,
+          question: parsed.question,
+          options: parsed.options,
+          correctIndex: typeof parsed.correctIndex === 'number' ? parsed.correctIndex : 0,
+          explanation: parsed.explanation || '',
+          pointsAwarded: typeof parsed.pointsAwarded === 'number' ? parsed.pointsAwarded : (parsed.points || 2)
+        };
+      }
+    } catch {}
+    return null;
+  }, [displayContent, message.id]);
+
+  // Stable first-class Active Correction extraction
+  const extractedCorrectionData = useMemo(() => {
+    if (!displayContent) return null;
+    const match = /```(?:correction|its-correction)\s*(\{[\s\S]*?\})\s*```/i.exec(displayContent);
+    if (!match) return null;
+    try {
+      const parsed = JSON.parse(match[1]);
+      if (parsed && (parsed.originalText || parsed.original) && (parsed.improvedText || parsed.improved)) {
+        return {
+          originalText: parsed.originalText || parsed.original,
+          improvedText: parsed.improvedText || parsed.improved,
+          ruleExplanation: parsed.ruleExplanation || parsed.rule || '',
+          category: parsed.category || 'Grammar'
+        };
+      }
+    } catch {}
+    return null;
+  }, [displayContent]);
+
+  // Stable first-class ITS Progress Badge extraction
+  const extractedItsBadgeData = useMemo(() => {
+    if (!displayContent) return null;
+    const match = /```(?:its-badge|badge|its-progress)\s*(\{[\s\S]*?\})\s*```/i.exec(displayContent);
+    if (!match) return null;
+    try {
+      const parsed = JSON.parse(match[1]);
+      if (parsed && (parsed.delta !== undefined || parsed.pointsDelta !== undefined)) {
+        return {
+          id: `badge-${message.id || Date.now()}`,
+          delta: parsed.delta ?? parsed.pointsDelta ?? 2,
+          reason: parsed.reason || 'إتقان لغوي',
+          metric: parsed.metric || 'Syntax',
+          currentLevel: parsed.currentLevel || parsed.level || 'B2',
+          feedback: parsed.feedback || '',
+          timestamp: new Date().toISOString()
+        };
+      }
+    } catch {}
+    return null;
+  }, [displayContent, message.id]);
+
+  // Clean markdown content excluding both SVG, Neural Image, and Fathom ITS blocks to prevent layout thrashing
   const displayContentWithoutSvgOrNeural = useMemo(() => {
     if (!displayContentWithoutSvg) return '';
     return displayContentWithoutSvg
       .replace(/```(?:neural-image|neural_image|image-studio|image_studio)\s*\{[\s\S]*?\}\s*```/gi, '')
       .replace(/```(?:neural-image|neural_image|image-studio|image_studio)\s*\{[\s\S]*$/gi, '') // during streaming
+      .replace(/```(?:msq|its-msq|quiz)\s*\{[\s\S]*?\}\s*```/gi, '')
+      .replace(/```(?:msq|its-msq|quiz)\s*\{[\s\S]*$/gi, '')
+      .replace(/```(?:correction|its-correction)\s*\{[\s\S]*?\}\s*```/gi, '')
+      .replace(/```(?:correction|its-correction)\s*\{[\s\S]*$/gi, '')
+      .replace(/```(?:its-badge|badge|its-progress)\s*\{[\s\S]*?\}\s*```/gi, '')
+      .replace(/```(?:its-badge|badge|its-progress)\s*\{[\s\S]*$/gi, '')
       .replace(/\[NEURAL-IMAGE-STUDIO:[^\]]+\]/gi, '')
       .replace(/\[VPS_CONTROL_ROOM(?::\s*[^\]]+)?\]/gi, '')
       .trim();
@@ -2115,6 +2228,37 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               </div>
             )}
 
+            {/* Stable first-class Fathom ITS Active Correction Card */}
+            {extractedCorrectionData && (
+              <div className="w-full my-3">
+                <ActiveCorrectionCard
+                  key={`its-correction-${message.id || 'current'}`}
+                  correction={extractedCorrectionData}
+                />
+              </div>
+            )}
+
+            {/* Stable first-class Fathom ITS MSQ Quiz Card */}
+            {extractedMsqData && (
+              <div className="w-full my-3">
+                <MsqQuizCard
+                  key={`its-msq-${message.id || 'current'}`}
+                  quiz={extractedMsqData}
+                  isStreaming={isStreaming}
+                />
+              </div>
+            )}
+
+            {/* Stable first-class Fathom ITS Progress Badge */}
+            {extractedItsBadgeData && (
+              <div className="w-full my-2">
+                <ItsProgressBadge
+                  key={`its-badge-${message.id || 'current'}`}
+                  data={extractedItsBadgeData}
+                />
+              </div>
+            )}
+
             {Boolean(displayContentWithoutSvgOrNeural && displayContentWithoutSvgOrNeural.trim().length > 0) && (
               <div className="prose prose-invert max-w-none text-[#E2E8F0] text-sm sm:text-base leading-relaxed break-words font-sans">
                 <ReactMarkdown
@@ -2331,7 +2475,35 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
         )}
 
         {message.content && !isStreaming && (
-          <div className="mt-2.5 sm:mt-3 pt-2 sm:pt-2.5 border-t border-zinc-800/60 flex items-center justify-end text-xs text-zinc-500">
+          <div className="mt-2.5 sm:mt-3 pt-2 sm:pt-2.5 border-t border-zinc-800/60 flex items-center justify-between text-xs text-zinc-500">
+            {/* Pronunciation speech button for Fathom ITS or English conversational dialogue */}
+            {(message.role === 'assistant' && (message.model === 'fathom-its-1' || /[a-zA-Z]{6,}/.test(displayContent))) ? (
+              <button
+                type="button"
+                onClick={handleToggleSpeech}
+                disabled={isLoadingAudio}
+                className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-200 transition-colors px-2.5 py-1 rounded-lg hover:bg-zinc-800/80 active:scale-95 text-xs font-medium cursor-pointer"
+                title="استماع للنطق الصوتي (ElevenLabs)"
+              >
+                {isLoadingAudio ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-300" />
+                    <span className="text-xs">جارِ معالجة الصوت...</span>
+                  </>
+                ) : isPlayingAudio ? (
+                  <>
+                    <VolumeX className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-400 text-xs font-medium">إيقاف الصوت</span>
+                  </>
+                ) : (
+                  <>
+                    <Volume2 className="w-3.5 h-3.5 text-zinc-400 hover:text-white" />
+                    <span className="text-xs">استماع للنطق</span>
+                  </>
+                )}
+              </button>
+            ) : <div />}
+
             <button
               type="button"
               onClick={handleCopyPromptOrContent}

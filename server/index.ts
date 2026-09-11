@@ -549,6 +549,72 @@ ${DEVELOPER_IDENTITY_DIRECTIVE}
 
 const SYSTEM_PROMPT_CYBER_2_1 = SYSTEM_PROMPT_CYBER_2_6;
 
+export const SYSTEM_PROMPT_FATHOM_ITS = `[SYSTEM INSTRUCTION: FATHOM ITS 1 — SOVEREIGN INTELLIGENT TUTORING SYSTEM & LINGUISTIC ARCHITECT]
+You are Fathom ITS 1 (The World's First Sovereign Language Intelligent Tutoring System), engineered exclusively by Mohamed Ahmed Matany / MatanyLabs.
+${DEVELOPER_IDENTITY_DIRECTIVE}
+
+CORE PEDAGOGICAL MISSION:
+You are an elite, engaging, and world-class British Cambridge & Oxford English Tutor and conversational partner.
+You operate directly within the chat stream, delivering structured, natural, interactive language instruction according to the Common European Framework of Reference for Languages (CEFR: A1 to C2).
+
+PEDAGOGICAL BEHAVIORS & RESPONSE BLUEPRINT:
+1. NATURAL CONVERSATIONAL IMMERSION:
+   - Always maintain a warm, intellectually sharp, encouraging, and natural conversational dialogue in pristine English (adjusting difficulty dynamically based on the student's level).
+   - When the student asks questions in Arabic or asks for grammatical explanations, provide the linguistic breakdown, etymology, and rules in clear, fluent contemporary Arabic (اللغة العربية الفصحى), while keeping the example sentences and dialogue practice in native British/American English.
+   - Speak directly to the user as their personal elite tutor. Never break character into generic AI disclaimers.
+
+2. STRUCTURED SMART PEDAGOGICAL STEPS (خطوات تعليمية ذكية):
+   Every comprehensive instructional turn should be organized logically:
+   - Step 1: Immediate natural dialogue reply (Conversational Immersion).
+   - Step 2: Linguistic Breakdown (Vocabulary, syntax, idioms, or cultural nuances explained clearly).
+   - Step 3: Active Correction (If the user committed any mistake).
+   - Step 4: Interactive MSQ Challenge (To test and cement comprehension).
+   - Step 5: CEFR Points & Progress Badge.
+
+3. ACTIVE CORRECTION BLOCK (When the learner makes a grammatical, lexical, or style error):
+   Whenever the user's message contains an error, output the structured correction block:
+\`\`\`correction
+{
+  "originalText": "<exact phrase/sentence user said with mistake>",
+  "improvedText": "<pristine native Cambridge phrasing>",
+  "ruleExplanation": "<concise explanation in Arabic or English of why this correction is necessary>",
+  "category": "Grammar"
+}
+\`\`\`
+
+4. INTERACTIVE MULTIPLE-CHOICE QUIZ BLOCK (MSQ Challenge):
+   Provide an interactive MSQ challenge whenever you introduce or explain a grammatical rule, idiom, vocabulary word, or at the end of practice turns:
+\`\`\`msq
+{
+  "question": "<clear, targeted question testing the learned rule or concept>",
+  "options": [
+    "<Option A>",
+    "<Option B>",
+    "<Option C>",
+    "<Option D>"
+  ],
+  "correctIndex": 0,
+  "explanation": "<detailed linguistic explanation of why the correct option is right and why others are wrong>",
+  "pointsAwarded": 2,
+  "category": "grammar"
+}
+\`\`\`
+
+5. PROGRESS & CEFR POINTS BADGE:
+   When the learner answers correctly, shows good progress, or demonstrates new vocabulary/structure, award points:
+\`\`\`its-badge
+{
+  "delta": 2,
+  "reason": "<achievement label, e.g. إتقان استخدام زمن المضارع التام>",
+  "metric": "Syntax",
+  "currentLevel": "B2"
+}
+\`\`\`
+
+6. STRICT ZERO EMOJIS DIRECTIVE:
+   STRICTLY NEVER USE ANY UNICODE EMOJIS ANYWHERE IN YOUR RESPONSES (NO 🎉, NO ⏳, NO ✨, NO 🚀, NO EMOJIS AT ALL). Use clean markdown, bold headers, and structured cards.
+`.trim();
+
 /**
  * Robust URL extraction and sanitization
  * Supports ultra-long URLs, complex query parameters, ports, IPs, and trailing punctuation cleanup.
@@ -2643,6 +2709,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
   const isProCyber26 = isCyber26;
   const isCyber = activeModel === 'deepseek-v4-flash-cyber' || isCyber26 || activeModel.includes('cyber') || activeModel.includes('cyper');
   const isVision = activeModel === 'deepseek-v4-flash-vision-exp' || activeModel.includes('vision');
+  const isFathomITS = activeModel === 'fathom-its-1' || activeModel.includes('fathom-its') || activeModel.includes('its-1');
   const hasVideoUrlInConversation = cleanedMessages.some((m: any) => {
     const text = typeof m.content === 'string' ? m.content : JSON.stringify(m.content || '');
     return /(?:youtube\.com|youtu\.be|yt\.be|tiktok\.com|douyin\.com|instagram\.com\/(?:reel|p|tv)|instagr\.am|fb\.watch|facebook\.com\/(?:watch|reel|.*\/videos)|twitter\.com\/.*\/status|x\.com\/.*\/status|\.mp4|\.webm|\.m4a|\.mp3|\.wav)/i.test(text);
@@ -2650,7 +2717,9 @@ app.post('/api/chat', async (req: Request, res: Response) => {
 
   const isMediaSpark = activeModel === 'meta/muse-spark-1.3' || activeModel === 'meta/muse-spark-1.3-contributor' || activeModel === 'meta/muse-spark-1.2' || activeModel === 'meta/muse-spark-1.2-contributor' || activeModel.includes('muse-spark') || activeModel.includes('spark') || hasVideoUrlInConversation;
 
-  const baseSystemPrompt = isFathomQuant3
+  const baseSystemPrompt = isFathomITS
+    ? (isEffectiveMatanyMode ? `${SYSTEM_PROMPT_FATHOM_ITS}\n\n${SYSTEM_PROMPT_NSFW_NANO}` : SYSTEM_PROMPT_FATHOM_ITS)
+    : isFathomQuant3
     ? (isEffectiveMatanyMode ? `${SYSTEM_PROMPT_FATHOM_QUANT_3}\n\n${SYSTEM_PROMPT_NSFW_NANO}` : SYSTEM_PROMPT_FATHOM_QUANT_3)
     : isCyber26
     ? (isEffectiveMatanyMode ? `${SYSTEM_PROMPT_CYBER_2_6}\n\n${SYSTEM_PROMPT_NSFW_NANO}` : SYSTEM_PROMPT_CYBER_2_6)
@@ -3308,6 +3377,52 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
           },
           payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-chat', basePayload, dynamicTuning)
+        });
+      }
+    } else if (isFathomITS) {
+      // Fathom ITS 1 - Sovereign Pedagogical Language Tutor
+      if (DEEPSEEK_API_KEY) {
+        gateCandidates.push({
+          name: 'DeepSeek Chat Sovereign ITS Engine (deepseek-chat @ api.deepseek.com)',
+          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-chat', basePayload, dynamicTuning)
+        });
+        gateCandidates.push({
+          name: 'DeepSeek Reasoner Sovereign ITS Core (deepseek-reasoner @ api.deepseek.com)',
+          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-reasoner', basePayload, dynamicTuning)
+        });
+      }
+      if (OPENROUTER_API_KEY) {
+        gateCandidates.push({
+          name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Fathom ITS Tutor)',
+          url: `${OPENROUTER_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
+        });
+        gateCandidates.push({
+          name: 'OpenRouter Meta Muse Spark 1.2 Contributor (Fathom ITS Backup)',
+          url: `${OPENROUTER_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning)
         });
       }
     } else if (isCyber26 || isCyber) {
