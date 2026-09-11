@@ -182,9 +182,13 @@ const MainAppContent: React.FC = () => {
   const [activeModel, setActiveModel] = useState<ModelType>(preferredBaseModel);
 
   const handleSelectModel = (model: ModelType) => {
+    if (model === 'fathom-its-1') {
+      navigateTo('fathom-its');
+      return;
+    }
     const effectiveModel = model === 'meta/muse-spark-1.3' ? 'meta/muse-spark-1.3-contributor' : model;
     setActiveModel(effectiveModel);
-    if (effectiveModel === 'fathom-quant-3' || effectiveModel === 'fathom-cyber-ultra-2.6' || effectiveModel === 'fathom-search' || effectiveModel === 'meta/muse-spark-1.3-contributor') {
+    if (effectiveModel === 'fathom-quant-3' || effectiveModel === 'fathom-cyber-ultra-2.6') {
       setPreferredBaseModel(effectiveModel);
       try {
         localStorage.setItem('matany_preferred_base_model', effectiveModel);

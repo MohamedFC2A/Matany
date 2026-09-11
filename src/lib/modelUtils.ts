@@ -9,17 +9,11 @@ export function getModelDisplayName(model?: string, isMatany?: boolean): string 
       return 'Fathom Quant 3';
     case 'fathom-cyber-ultra-2.6':
       return 'Fathom Cyber Ultra 2.6';
-    case 'fathom-search':
-      return 'Fathom Search';
-    case 'meta/muse-spark-1.2':
-    case 'meta/muse-spark-1.3':
-    case 'meta/muse-spark-1.2-contributor':
-    case 'meta/muse-spark-1.3-contributor':
-      return 'Fathom Spark';
+    case 'fathom-its-1':
+      return 'Fathom ITS 1';
     default:
+      if (model.includes('its')) return 'Fathom ITS 1';
       if (model.includes('cyber') || model.includes('ultra')) return 'Fathom Cyber Ultra 2.6';
-      if (model.includes('search') || model.includes('fathom-search')) return 'Fathom Search';
-      if (model.includes('spark') || model.includes('muse')) return 'Fathom Spark';
       return 'Fathom Quant 3';
   }
 }
@@ -33,13 +27,8 @@ export function getModelSubtitle(model?: string, isMatany?: boolean): string {
       return 'استدلال تحليلي فائق، توليد ومعالجة الصور بدقة عالية، والتحكم السحابي المتقدم';
     case 'fathom-cyber-ultra-2.6':
       return 'تفكير استدلالي وهندسة سيبرانية متقدمة واستنتاج عميق';
-    case 'fathom-search':
-      return 'محرك البحث والاستقصاء المتشعب، واسترجاع الذاكرة العصبية وفحص وسائط الذكاء الاصطناعي';
-    case 'meta/muse-spark-1.2':
-    case 'meta/muse-spark-1.3':
-    case 'meta/muse-spark-1.2-contributor':
-    case 'meta/muse-spark-1.3-contributor':
-      return 'معالجة الوسائط المتعددة: تفكيك وتحليل المقاطع الصوتية والمرئية';
+    case 'fathom-its-1':
+      return 'أول منظومة تعليم لغات ذكية مستقلة في العالم بنظام CEFR والتكامل الصوتي';
     default:
       return 'استدلال تحليلي فائق، توليد ومعالجة الصور بدقة عالية، والتحكم السحابي المتقدم';
   }
@@ -57,6 +46,9 @@ export function getModelPlaceholder(
 ): string {
   if (options?.activeFusion?.placeholder) {
     return options.activeFusion.placeholder;
+  }
+  if (model === 'fathom-its-1') {
+    return 'تحدث مع Fathom ITS 1 لتعلم الإنجليزية أو اسأل عن القواعد والتقييم اللغوي...';
   }
   if (model === 'fathom-search' || options?.isDeepSearch) {
     return 'ابحث واستقصِ بذكاء عبر Fathom Search (استعلام حي، سياق، ذاكرة، وفحص وسائط)...';

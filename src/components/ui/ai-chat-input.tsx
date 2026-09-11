@@ -1042,16 +1042,15 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                   );
                 })()}
 
-                {/* 3. Fathom Search (OpenRouter Live Web Intelligence) */}
+                {/* 3. Fathom ITS 1 (Sovereign Language Intelligent Tutoring System) */}
                 {(() => {
-                  const isSelected = internalModel === 'fathom-search' || isDeepSearchEffective;
+                  const isSelected = internalModel === 'fathom-its-1';
                   return (
                     <button
                       type="button"
                       onClick={() => {
-                        setInternalModel('fathom-search');
-                        onSelectModel?.('fathom-search');
-                        if (!isDeepSearchEffective) toggleDeepSearch();
+                        setInternalModel('fathom-its-1');
+                        onSelectModel?.('fathom-its-1');
                         setIsModelMenuOpen(false);
                       }}
                       className={cn(
@@ -1064,53 +1063,16 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                       <div className="w-full flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2" dir="ltr">
                           <span className="font-semibold text-xs tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-300 bg-clip-text text-transparent">
-                            Fathom Search
+                            Fathom ITS 1
                           </span>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400 font-medium border border-zinc-700/50 font-mono">
-                            Web AI
-                          </span>
-                        </div>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-zinc-200 shrink-0" />}
-                      </div>
-                      <div dir="rtl" className="text-[11px] text-zinc-400 font-normal leading-normal text-right group-hover:text-zinc-300 transition-colors">
-                        بحث واستقصاء حي بالويب وتدقيق المصادر
-                      </div>
-                    </button>
-                  );
-                })()}
-
-                {/* 4. Fathom Spark (Multimodal Media, Code & Vision) */}
-                {(() => {
-                  const isSelected = internalModel === 'meta/muse-spark-1.3' || internalModel === 'meta/muse-spark-1.3-contributor' || internalModel === 'meta/muse-spark-1.2' || internalModel === 'meta/muse-spark-1.2-contributor';
-                  return (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setInternalModel('meta/muse-spark-1.3-contributor');
-                        onSelectModel?.('meta/muse-spark-1.3-contributor');
-                        if (isDeepSearchEffective) toggleDeepSearch();
-                        setIsModelMenuOpen(false);
-                      }}
-                      className={cn(
-                        "w-full flex flex-col gap-1 px-3 py-2.5 rounded-xl text-xs font-sans transition-all cursor-pointer border text-right group relative",
-                        isSelected
-                          ? "bg-zinc-900/90 border-zinc-700/80 shadow-sm"
-                          : "bg-transparent hover:bg-zinc-900/50 text-zinc-300 border-transparent hover:border-zinc-800/60"
-                      )}
-                    >
-                      <div className="w-full flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2" dir="ltr">
-                          <span className="font-semibold text-xs tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-300 bg-clip-text text-transparent">
-                            Fathom Spark
-                          </span>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400 font-medium border border-zinc-700/50 font-mono">
-                            Spark 1.3
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-300 font-medium border border-zinc-700/50 font-mono">
+                            Education
                           </span>
                         </div>
                         {isSelected && <Check className="w-3.5 h-3.5 text-zinc-200 shrink-0" />}
                       </div>
                       <div dir="rtl" className="text-[11px] text-zinc-400 font-normal leading-normal text-right group-hover:text-zinc-300 transition-colors">
-                        معالجة وسائط فائقة، تفكيك الفيديوهات، واستيعاب بصري
+                        أول منظومة تعليم لغات ذكية مستقلة بنظام CEFR والتكامل الصوتي
                       </div>
                     </button>
                   );
