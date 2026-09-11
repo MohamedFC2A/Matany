@@ -133,8 +133,13 @@ export async function runFathomSearchEngineTests(harness: TestHarness) {
       expect(milestones.length).toBeGreaterThanOrEqual(1);
       const searchMilestone = milestones.find(m => m.specialType === 'search');
       expect(searchMilestone).toBeDefined();
-      expect(searchMilestone?.title).toBe('Fathom Search of Web');
+      expect(searchMilestone?.title).toBe('Fathom Search of سعر الدولار اليوم');
       expect(searchMilestone?.title).not.toContain('Serper');
+
+      // Verify fallback when no explicit query is provided
+      const fallbackMilestones = parseReasoningMilestones('• المصدر [1]: معلومات عامة', false, false, false, true, []);
+      const fallbackSearchMilestone = fallbackMilestones.find(m => m.specialType === 'search');
+      expect(fallbackSearchMilestone?.title).toBe('Fathom Search of Web');
     });
   });
 }

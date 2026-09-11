@@ -16,7 +16,8 @@ import {
   normalizeArabicText,
   extractCleanSearchQuery,
   extractEntitiesFromQuery,
-  buildTemporalSearchQuery
+  buildTemporalSearchQuery,
+  resolveMultiTurnQuery
 } from './queryProcessor';
 
 interface IntentRule {
@@ -362,6 +363,13 @@ export function classifyQueryIntent(
 
   const should_search = highestScore >= 0.40;
 
+  // Extract a clean topic representation for display (e.g. "Fathom Search of [extractedTopic]")
+  let extractedTopic = cleanCore || query;
+  const topicWords = extractedTopic.split(/\s+/);
+  if (topicWords.length > 7) {
+    extractedTopic = topicWords.slice(0, 6).join(' ');
+  }
+
   return {
     intent: matchedIntent,
     confidence: Number(highestScore.toFixed(2)),
@@ -375,6 +383,25 @@ export function classifyQueryIntent(
     reason: matchReason,
     temporalBias: isRecencyBiased,
     targetYear: entities.years[0] || new Date().getUTCFullYear(),
-    extractedQuery: temporalQuery || cleanCore || query
+    extractedQuery: temporalQuery || cleanCore || query,
+    extractedTopic
   };
+}
+
+/**
+ * Deep multi-turn contextual query classifier: resolves pronouns and historical context
+ * before evaluating search necessity.
+ */
+export function classifyContextualQueryIntent(
+  rawQuery: string,
+  history?: Array<{ role: string; content: any }>,
+  options?: { explicitDeepSearch?: boolean; previousIntent?: QueryIntent }
+): IntentClassificationResult {
+  const query = (rawQuery || '').trim();
+  const contextualResolved = resolveMultiTurnQuery(query, history);
+  const activeQuery = (contextualResolved.length > query.length && contextualResolved.includes(query))
+    ? contextualResolved
+    : query;
+
+  return classifyQueryIntent(activeQuery, options);
 }

@@ -11,6 +11,19 @@
  * ============================================================================
  */
 
+import {
+  classifyContextualQueryIntent,
+  resolveMultiTurnQuery,
+  extractCleanSearchQuery
+} from './searchEngine';
+
+export interface ExtractedSearchContext {
+  shouldSearch: boolean;
+  extractedQuery: string;
+  extractedTopic: string;
+  reason: string;
+}
+
 export type UserIntentCategory =
   | 'SYSTEM_DIAGNOSTIC_GPAENG'
   | 'CYBERSECURITY_AND_EXPLOIT_AUDITING'
@@ -105,6 +118,7 @@ export interface DynamicTuningResult {
   hyperparameters: TunedHyperparameters;
   calibrationDirective: string;
   tuningRationale: string;
+  extractedSearchContext?: ExtractedSearchContext;
   telemetry: {
     intent: string;
     model: string;
@@ -587,6 +601,71 @@ export class DynamicParameterTuner {
   }
 
   /**
+   * Deep Contextual Search Intent Evaluator:
+   * 1. Reconstructs multi-turn conversational antecedent entities
+   * 2. Evaluates real-time / current facts (finance, gold, 2026 events, tech docs, sports, weather)
+   * 3. Enforces strict negative suppressors (math, coding logic, creative writing, memory recall, images)
+   * 4. Extracts a clean topic string for dynamic display (Fathom Search of [Topic])
+   */
+  public static evaluateContextualSearchIntent(request: DynamicTuningRequest): ExtractedSearchContext {
+    const rawText = (request.userPrompt || '').trim();
+    const history = Array.isArray(request.conversationHistory) ? request.conversationHistory : [];
+
+    // 1. Explicit user toggle switch
+    if (request.deepSearch) {
+      const cleanQ = extractCleanSearchQuery(rawText) || rawText;
+      let cleanTopic = cleanQ;
+      const words = cleanTopic.split(/\s+/);
+      if (words.length > 7) {
+        cleanTopic = words.slice(0, 6).join(' ');
+      }
+      return {
+        shouldSearch: true,
+        extractedQuery: cleanQ,
+        extractedTopic: cleanTopic,
+        reason: 'User explicitly activated web search toggle.'
+      };
+    }
+
+    // 2. Strict Negative Anti-Search Suppressors (Zero false positives)
+    if (this.isImageGenerationOrEditIntent(rawText)) {
+      return { shouldSearch: false, extractedQuery: '', extractedTopic: '', reason: 'Image creation or manipulation intent.' };
+    }
+
+    // Pure mathematics, logic proofs, equation solving
+    if (/^(?:احسب|حل\s*المعادلة|حل\s*المعادله|ما\s*ناتج|اوجد\s*قيمة|\d+\s*[\+\-\*\/]\s*\d+|calculate|solve\s+for\s+x)\b/i.test(rawText)) {
+      return { shouldSearch: false, extractedQuery: '', extractedTopic: '', reason: 'Pure mathematical calculation or equation solving.' };
+    }
+
+    // Pure creative writing or poems
+    if (/^(?:اكتب\s*لي\s*(?:قصيدة|شعر|قصة|رواية|خاطرة)|الف\s*لي\s*قصة|write\s+a\s+poem|write\s+a\s+story)\b/i.test(rawText)) {
+      return { shouldSearch: false, extractedQuery: '', extractedTopic: '', reason: 'Creative fiction or poetry generation.' };
+    }
+
+    // 3. Autonomous Multi-Turn Context Intent Classification
+    const classification = classifyContextualQueryIntent(rawText, history, {
+      explicitDeepSearch: Boolean(request.deepSearch)
+    });
+
+    if (classification.should_search) {
+      const topic = classification.extractedTopic || classification.extractedQuery || rawText;
+      return {
+        shouldSearch: true,
+        extractedQuery: classification.extractedQuery || rawText,
+        extractedTopic: topic,
+        reason: classification.reason || 'Real-time factual inquiry requiring live verified intelligence.'
+      };
+    }
+
+    return {
+      shouldSearch: false,
+      extractedQuery: '',
+      extractedTopic: '',
+      reason: 'Standard internal conversational and analytical reasoning.'
+    };
+  }
+
+  /**
    * Evaluates if a model qualifies as a Cyber Ultra flagship model (deepseek-v4-pro-cyber-2.6, fathom-cyber-2.6, etc.)
    */
   public static isCyberUltraModel(modelName: string): boolean {
@@ -883,6 +962,7 @@ export class DynamicParameterTuner {
     complexity: TaskComplexity;
     hallucinationRisk: HallucinationRisk;
     rationale: string;
+    extractedSearchContext?: ExtractedSearchContext;
   } {
     const text = (request.userPrompt || '').trim();
     const isMatany = Boolean(request.isMatanyMode);
@@ -1200,16 +1280,16 @@ export class DynamicParameterTuner {
       };
     }
 
-    // 12. Deep Search or Realtime Grounding Check
-    const hasFactualTrigger = /(سعر|أخبار|اسعار|مؤتمر|طقس|مباراة|احداث|حدث|نتائج)/i.test(text) ||
-      (/(اليوم|الان|2026|حالياً)/i.test(text) && !/(كيف\s*حالك|عامل\s*ايه|ازيك|صباح|مساء)/i.test(text));
-    if (request.deepSearch || hasFactualTrigger) {
+    // 12. Deep Contextual Search or Realtime Grounding Check
+    const searchAssessment = this.evaluateContextualSearchIntent(request);
+    if (searchAssessment.shouldSearch) {
       return {
         intent: 'FACTUAL_SEARCH_AND_REALTIME_GROUNDING',
-        confidence: 0.92,
+        confidence: 0.95,
         complexity: 'STANDARD',
         hallucinationRisk: 'HIGH',
-        rationale: 'Real-time factual grounding, live search synthesis, or current event verification.'
+        rationale: searchAssessment.reason,
+        extractedSearchContext: searchAssessment
       };
     }
 
@@ -1772,7 +1852,7 @@ export class DynamicParameterTuner {
    * Main Public Entrypoint: Coordinates complete Dynamic Parameter Tuning for any model request.
    */
   public static tune(request: DynamicTuningRequest): DynamicTuningResult {
-    const { intent, confidence, complexity, hallucinationRisk, rationale } =
+    const { intent, confidence, complexity, hallucinationRisk, rationale, extractedSearchContext } =
       this.detectIntentAndComplexity(request);
 
     const modelFamily = this.resolveModelFamily(request.requestedModel);
@@ -1814,6 +1894,7 @@ export class DynamicParameterTuner {
       hyperparameters,
       calibrationDirective,
       tuningRationale: rationale,
+      extractedSearchContext,
       telemetry: {
         intent,
         model: request.requestedModel,
@@ -2000,15 +2081,23 @@ export class DynamicParameterTuner {
         };
       }
 
-      // Fathom Search Web Search integration via OpenRouter Official Web Server Tool
-      if (candidateFamily === 'fathom-search' || candidateModel.includes('search') || candidateModel.includes(':online') || candidateModel.includes('qwen')) {
-        payload.plugins = [
+      // Fathom Search Web Search integration via OpenRouter Official Web Server Tool (https://openrouter.ai/docs/features/server-tools/web-search)
+      if (
+        tuningResult.detectedIntent === 'FACTUAL_SEARCH_AND_REALTIME_GROUNDING' ||
+        payload.enableWebSearch ||
+        candidateFamily === 'fathom-search' ||
+        candidateModel.includes('search') ||
+        candidateModel.includes('qwen')
+      ) {
+        payload.tools = [
           {
-            id: 'web',
-            max_results: 5
+            type: 'openrouter:web_search',
+            parameters: {
+              engine: 'auto',
+              max_results: 5
+            }
           }
         ];
-        payload.tools = [{ type: 'openrouter:web_search' }];
       }
     }
 
@@ -2221,6 +2310,41 @@ export class DynamicParameterTuner {
           return m;
         });
       }
+
+      // 7. OpenRouter Native Web Search Server Tool Integration (https://openrouter.ai/docs/features/server-tools/web-search)
+      const hasExplicitWebSearch = Boolean(cleanPayload.enableWebSearch || cleanPayload.deepSearch);
+      const hasWebSearchInTools = Array.isArray(cleanPayload.tools) && cleanPayload.tools.some((t: any) => t.type === 'openrouter:web_search');
+
+      if (hasExplicitWebSearch || hasWebSearchInTools) {
+        delete cleanPayload.plugins;
+        if (typeof cleanPayload.model === 'string' && cleanPayload.model.endsWith(':online')) {
+          cleanPayload.model = cleanPayload.model.replace(/:online$/, '');
+        }
+        if (Array.isArray(cleanPayload.models)) {
+          cleanPayload.models = cleanPayload.models.map((m: string) => typeof m === 'string' ? m.replace(/:online$/, '') : m);
+        }
+
+        const maxResults = cleanPayload.webSearchMaxResults || 5;
+        const webSearchTool = {
+          type: 'openrouter:web_search',
+          parameters: {
+            engine: 'auto',
+            max_results: maxResults
+          }
+        };
+
+        if (!Array.isArray(cleanPayload.tools)) {
+          cleanPayload.tools = [webSearchTool];
+        } else {
+          cleanPayload.tools = cleanPayload.tools.filter((t: any) => t.type !== 'openrouter:web_search');
+          cleanPayload.tools.push(webSearchTool);
+        }
+      }
+
+      // Purge non-standard top-level parameters before gateway transmission
+      delete cleanPayload.enableWebSearch;
+      delete cleanPayload.deepSearch;
+      delete cleanPayload.webSearchMaxResults;
     }
     return cleanPayload;
   }

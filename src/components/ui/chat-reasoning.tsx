@@ -84,9 +84,15 @@ export interface FathomSearchContextualInfo {
 
 export function getFathomSearchContextualInfo(
   text: string = '',
-  activeFeatures: DetectedFeatureData[] = []
+  activeFeatures: DetectedFeatureData[] = [],
+  explicitQuery?: string
 ): FathomSearchContextualInfo {
   const content = text || '';
+
+  // Extract query if present
+  const queryMatch = explicitQuery?.trim() ||
+    content.match(/\[(?:البحث عن|query)\s*:\s*["']?([^\]"']+)["']?\]/i)?.[1]?.trim() ||
+    content.match(/(?:البحث عن|استعلام عن)\s*[:"']?\s*["']?([^"\n\r\]•]+)["']?/i)?.[1]?.trim();
 
   // 1. AI Video / Image Forensic Check
   const hasAiDetect = activeFeatures.some(f => f.id === 'ai_detect' || f.id === 'metadata_detect') ||
@@ -131,7 +137,7 @@ export function getFathomSearchContextualInfo(
   if (hasCode && !/(?:بحث\s*عن|استعلام\s*شبكي|web\s*search|سعر|طقس|أخبار|نتائج)/i.test(content)) {
     return {
       domain: 'code',
-      title: 'Fathom Search of Code & Architecture',
+      title: queryMatch ? `Fathom Search of ${queryMatch}` : 'Fathom Search of Code & Architecture',
       contextSentence: 'استكشاف وتشريح معماريات البرمجيات ومراجعة المعايير الهندسية وأنماط التصميم.'
     };
   }
@@ -142,15 +148,17 @@ export function getFathomSearchContextualInfo(
   if (hasConversationContext && !/(?:بحث\s*عن|استعلام\s*شبكي|web\s*search|سعر|طقس|أخبار)/i.test(content)) {
     return {
       domain: 'conversation',
-      title: 'Fathom Search of Conversation & Context',
+      title: queryMatch ? `Fathom Search of ${queryMatch}` : 'Fathom Search of Conversation & Context',
       contextSentence: 'استيعاب متعدد الطبقات لسياق المحادثة وبناء الروابط المنطقية بين الرسائل والملفات.'
     };
   }
 
-  // 6. Default: Live Web Query
+  // 6. Default: Dynamic Live Web Query
+  const displayTitle = queryMatch ? `Fathom Search of ${queryMatch}` : 'Fathom Search of Web';
+
   return {
     domain: 'web',
-    title: 'Fathom Search of Web',
+    title: displayTitle,
     contextSentence: 'استطلاع فائق وموسع للويب الحي وتدقيق المصادر واستخلاص الحقائق عبر فروع معرفية متزامنة.'
   };
 }
@@ -166,7 +174,10 @@ export function parseReasoningMilestones(
   hasFathomSearch: boolean = false,
   activeFeatures: DetectedFeatureData[] = []
 ): Milestone[] {
-  const searchContext = getFathomSearchContextualInfo(rawText, activeFeatures);
+  const initialQueryMatch = rawText?.match(/\[(?:البحث عن|query)\s*:\s*["']?([^\]"']+)["']?\]/i)?.[1]?.trim() ||
+                            rawText?.match(/(?:البحث عن|استعلام عن)\s*[:"']?\s*["']?([^"\n\r\]•]+)["']?/i)?.[1]?.trim();
+
+  const searchContext = getFathomSearchContextualInfo(rawText, activeFeatures, initialQueryMatch);
 
   // Base default milestones when stream is just starting or empty
   if (!rawText || !rawText.trim()) {
@@ -520,9 +531,9 @@ function renderMilestoneTitle(text: string) {
       {parts.map((part, i) => {
         const match = matches[i];
         if (!match) {
-          const domainMatch = part.match(/^\s*(of\s+(?:Web|AI\s+Vid\s+or\s+Img|Neural\s+Memory|Temporal\s+Context|Code\s+&\s+Architecture|Conversation\s+&\s+Context))(.*)$/is);
+          const domainMatch = part.match(/^\s*(of\s+[^•\n\r]+)(.*)$/is);
           if (domainMatch) {
-            const domainLabel = domainMatch[1];
+            const domainLabel = domainMatch[1].trim();
             const rest = domainMatch[2];
             return (
               <React.Fragment key={i}>
@@ -637,7 +648,7 @@ export default function ChatReasoning({
   const isFathomSearchActive = useMemo(() => {
     return (
       activeFeatures.some(f => f.id === 'fathom_search') ||
-      /(?:\[?FATHOM\s*SEARCH\]?|Fathom\s*Search|\bFathomSearch\b|فاثوم\s*سيرش|\[LIVE\s*WEB\s*INTELLIGENCE\]|الاستعلام\s*الشبكي|المصادر\s*الموثقة|نتائج\s*البحث\s*الحي|•\s*المصدر\s*\[\d+\]|Fathom\s*Search\s*2\.0)/i.test(fullText)
+      /(?:\[?FATHOM\s*SEARCH\]?|Fathom\s*Search|\bFathomSearch\b|فاثوم\s*سيرش|\[LIVE\s*WEB\s*INTELLIGENCE\]|الاستعلام\s*الشبكي|المصادر\s*الموثقة|نتائج\s*البحث\s*الحي|•\s*المصدر\s*\[\d+\]|Fathom\s*Search\s*2\.0|🔍\s*\[استعلام حي وتدقيق المصادر)/i.test(fullText)
     );
   }, [activeFeatures, fullText]);
 

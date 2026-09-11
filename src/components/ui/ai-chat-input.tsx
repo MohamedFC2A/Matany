@@ -294,7 +294,7 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
     const isCyberMode = isCyber26Mode;
     const isMediaMode = hasNonImageMedia || internalModel === 'meta/muse-spark-1.3-contributor' || internalModel === 'meta/muse-spark-1.2-contributor';
 
-    const effectiveDisplayModel = (internalModel === 'fathom-search' || isDeepSearchEffective) ? 'fathom-search' : internalModel;
+    const effectiveDisplayModel = internalModel;
     const activeModelDisplayName = getModelDisplayName(effectiveDisplayModel, isMatanyActive);
 
     const activeBackendModel = effectiveModel;
@@ -658,7 +658,7 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
         ? 'fathom-quant-3'
         : (internalModel === 'fathom-quant-3')
         ? 'fathom-quant-3'
-        : (internalModel === 'fathom-search' || isDeepSearchEffective)
+        : (internalModel === 'fathom-search')
         ? 'fathom-search'
         : hasNonImageMedia
         ? 'meta/muse-spark-1.3'
@@ -977,7 +977,6 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                       onClick={() => {
                         setInternalModel('fathom-quant-3');
                         onSelectModel?.('fathom-quant-3');
-                        if (isDeepSearchEffective) toggleDeepSearch();
                         setIsModelMenuOpen(false);
                       }}
                       className={cn(
@@ -1014,7 +1013,6 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                       onClick={() => {
                         setInternalModel('fathom-cyber-ultra-2.6');
                         onSelectModel?.('fathom-cyber-ultra-2.6');
-                        if (isDeepSearchEffective) toggleDeepSearch();
                         setIsModelMenuOpen(false);
                       }}
                       className={cn(
@@ -1211,10 +1209,6 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                   type="button"
                   onClick={() => {
                     toggleDeepSearch();
-                    if (!isDeepSearchEffective) {
-                      setInternalModel('fathom-search');
-                      onSelectModel?.('fathom-search');
-                    }
                     setIsActionsMenuOpen(false);
                   }}
                   className={cn(

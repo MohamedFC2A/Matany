@@ -63,6 +63,7 @@ export interface IntentClassificationResult {
   temporalBias: boolean;
   targetYear?: number;
   extractedQuery: string;
+  extractedTopic?: string;
 }
 
 export interface SearchResult {

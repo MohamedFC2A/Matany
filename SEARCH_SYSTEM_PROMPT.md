@@ -14,13 +14,11 @@
    - تحديد درجة الثقة: هل السؤال يحتاج بحث فعلي أم يمكن الإجابة من المعرفة الحالية؟
    - دعم كامل للعربية والإنجليزية
 
-### 2️⃣ **البحث متعدد المصادر (Multi-Source Aggregation)**
-   - **المصادر الأساسية:**
-     - Google Custom Search API (الأولوية الأولى)
-     - DuckDuckGo HTML Scraper (بديل مجاني)
-     - Google News RSS Feed (للأخبار العاجلة)
-     - Serper.dev API (إذا متاح)
-     - Bing Web Search (احتياطي)
+### 2️⃣ **محرك البحث الحي (Fathom Search Engine)**
+   - **المحرك الأساسي المعتمد:**
+     - OpenRouter Native Web Search Tool (`openrouter:web_search`)
+     - استخراج حي وموثق للمصادر والعناوين (URL Citations)
+     - استعلام سياقي فائق الفهم متعدد الجولات (Multi-turn Contextual Resolution)
    
    - **معالجة ذكية للنتائج:**
      - إزالة النتائج المكررة
@@ -81,12 +79,11 @@
 └────────────────────┬────────────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────────────┐
-│    Multi-Source Search Engine (Parallel Execution)       │
-│  ├─ Google Search (Primary)                              │
-│  ├─ DuckDuckGo (Fallback)                                │
-│  ├─ News Feed (Real-time)                                │
-│  ├─ Serper API (Premium)                                 │
-│  └─ Cache Layer (Redis/In-Memory)                        │
+│    Fathom Search Engine (OpenRouter Native Web Tool)    │
+│  ├─ openrouter:web_search Tool                           │
+│  ├─ Multi-turn Context Resolution                        │
+│  ├─ Real-time URL Citations & Annotations                │
+│  └─ Semantic Verification Layer                          │
 └────────────────────┬────────────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────────────┐
@@ -118,13 +115,12 @@
 server/
 ├── searchEngine/
 │   ├── index.ts                      # نقطة الدخول الرئيسية
-│   ├── intentClassifier.ts           # فهم نية السؤال
-│   ├── queryProcessor.ts             # معالجة الاستعلام
+│   ├── intentClassifier.ts           # فهم نية السؤال والسياق المتقدم
+│   ├── queryProcessor.ts             # معالجة وتدقيق الاستعلام
 │   ├── multiSourceSearcher.ts        # البحث متعدد المصادر
 │   ├── googleSearch.ts               # محرك بحث جوجل
 │   ├── duckduckgoSearch.ts           # محرك DuckDuckGo
 │   ├── newsSearch.ts                 # بحث الأخبار
-│   ├── serperSearch.ts               # Serper API
 │   ├── resultsAggregator.ts          # تجميع وترتيب النتائج
 │   ├── promptAugmentation.ts         # حقن النتائج في الـ prompt
 │   ├── cacheManager.ts               # نظام التخزين المؤقت
@@ -243,19 +239,17 @@ response: XML Feed يحتوي على:
 - source
 ```
 
-**4. Serper.dev API (Premium - اختياري)**
+**4. OpenRouter Native Web Search Tool (المعتمد رسمياً)**
 ```typescript
-endpoint: "https://google.serper.dev/search"
-method: "POST"
-headers: {
-  "X-API-KEY": process.env.SERPER_API_KEY,
-  "Content-Type": "application/json"
-}
-body: {
-  q: string,
-  num: 10,
-  type: 'search' | 'news' | 'scholar'
-}
+tools: [
+  {
+    type: "openrouter:web_search",
+    parameters: {
+      engine: "auto",
+      max_results: 5
+    }
+  }
+]
 ```
 
 ---

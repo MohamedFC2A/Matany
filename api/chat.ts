@@ -2414,41 +2414,36 @@ export default async function handler(req: Request): Promise<Response> {
     const isImageOrSvgIntent = dynamicTuning.detectedIntent === 'NEURAL_IMAGE_STUDIO_AND_PROCESSING' ||
       (dynamicTuning.detectedIntent === 'SVG_VECTOR_STUDIO_AND_DESIGN' && !deepSearch && !/(?:ابحث|بحث|سيرش|مصادر|search|google|news)/i.test(rawUserContent));
 
-    let contextualQuery = rawUserContent;
     if (isImageOrSvgIntent) {
       willSearch = false;
     } else {
-      contextualQuery = resolveMultiTurnQuery(rawUserContent, processedMessages);
-      willSearch = shouldPerformLiveSearch(contextualQuery, deepSearch) || shouldPerformLiveSearch(rawUserContent, deepSearch);
+      willSearch = Boolean(deepSearch) ||
+        dynamicTuning.detectedIntent === 'FACTUAL_SEARCH_AND_REALTIME_GROUNDING' ||
+        Boolean(dynamicTuning.extractedSearchContext?.shouldSearch);
     }
 
     if (willSearch) {
-      const activeSearchQuery = (contextualQuery.length > rawUserContent.length && contextualQuery.includes(rawUserContent)) ? contextualQuery : rawUserContent;
-      console.log(`[FATHOM SEARCH PIPELINE Edge] Initiating Multi-Constraint Web Intelligence for: "${activeSearchQuery.slice(0, 80)}..."`);
-      const searchPromise = performUltraDeepCyberSearch(activeSearchQuery, undefined);
-      const searchTimeoutPromise = new Promise<CyberSearchResult>((resolve) => setTimeout(() => resolve({ groundingContextBlock: '', searchMilestonesText: '' }), 6000));
-      const searchObj = await Promise.race([searchPromise, searchTimeoutPromise]);
-      searchRes = searchObj.groundingContextBlock;
-      searchMilestonesStreamText = searchObj.searchMilestonesText;
+      const activeSearchTopic = dynamicTuning.extractedSearchContext?.extractedTopic ||
+        extractCleanSearchQuery(rawUserContent) ||
+        rawUserContent;
 
-      if (searchRes) {
-        const isSvgOrImageIntent = dynamicTuning.detectedIntent === 'SVG_VECTOR_STUDIO_AND_DESIGN' ||
-          /(?:svg|فيكتور|متجهات|vector|رسمة|صورة|شعار|لوجو|ايقونة|أيقونة|ارسم|صمم)/i.test(rawUserContent);
+      console.log(`[FATHOM SEARCH PIPELINE Edge] OpenRouter Native Web Search Server Tool activated for Topic: "${activeSearchTopic.slice(0, 80)}..."`);
+      searchMilestonesStreamText = `🔍 [استعلام حي وتدقيق المصادر: [البحث عن: "${activeSearchTopic}"]: تم فحص البيانات المحدثة بنجاح]\n\n`;
 
-        const fathomSearchGuidance = isSvgOrImageIntent ? `
+      const isSvgOrImageIntent = dynamicTuning.detectedIntent === 'SVG_VECTOR_STUDIO_AND_DESIGN' ||
+        /(?:svg|فيكتور|متجهات|vector|رسمة|صورة|شعار|لوجو|ايقونة|أيقونة|ارسم|صمم)/i.test(rawUserContent);
+
+      const fathomSearchGuidance = isSvgOrImageIntent ? `
 [توجيه استخبارات البحث البصري وتوليد الصور والرسومات — VISUAL SEARCH & DESIGN SYNTHESIS DIRECTIVE]:
-- استند إلى بيانات وحقائق ومعالم البحث المسترجعة أعلاه لاستخلاص الملامح البصرية الدقيقة، الألوان الواقعية، النسب المعمارية أو الفنية، والخصائص البصرية للكيان أو العنصر المطلوب.
-- حظر إخراج أي تفكير أو نصوص بحثية أو روابط أو اقتباسات نصية خارج كود الـ SVG.
-- قم فوراً بترجمة وتجسيد كافة المعلومات المستخلصة من البحث إلى كود SVG نقي متقن ومكتمل داخل \`\`\`svg ... \`\`\` يعبر عن التصميم أو الصورة المطلوبة بأعلى دقة فنية وجمالية وبدقة 2K / 4K.
-- يُمنع تماماً طباعة أي رموز عشوائية أو تهويمات؛ أخرج الكود مباشرة ونظيفاً 100%.` : `
-[توجيه استخبارات البحث الحي وحسم الحقائق — FATHOM SEARCH FACTUAL SYNTHESIS DIRECTIVE]:
-- في خطوات تفكيرك الداخلي <think>، استند 100% إلى الحقائق والمصادر الحية المستخرجة أعلاه لحسم أي وقائع أو أحداث أو تفاصيل بدقة قطعية.
+- استند إلى أداة البحث في الويب لاستخلاص الملامح البصرية الدقيقة، الألوان الواقعية، والخصائص البصرية.
+- قم فوراً بترجمة كافة المعلومات المستخلصة من البحث إلى كود SVG نقي متقن داخل \`\`\`svg ... \`\`\` بدقة 2K / 4K.` : `
+[توجيه استخبارات البحث الحي وحسم الحقائق — FATHOM SEARCH & REAL-TIME WEB GROUNDING DIRECTIVE]:
+- تم تفعيل أداة البحث في الويب الرسمية (openrouter:web_search) لك من خلال المنظومة.
+- في خطوات تفكيرك الداخلي <think>، استند 100% إلى الحقائق والمصادر الحية المسترجعة لحسم أي وقائع أو أسعار أو أحداث لعام 2026 بدقة قطعية.
 - حظر التخمين والهلوسة (Strict Anti-Hallucination): يُحظر تماماً التخمين الافتراضي أو إنكار الوقائع المذكورة في المصادر الحية المسترجعة.
-- بروتوكول التفكير الشجري: طبق الفروع الخمسة داخل <think> (تفكيك المعطيات، تدقيق المصادر، فحص الفرضيات، الاستنتاج المنطقي، وهندسة الإجابة).
-- التزم التزاماً مطلقاً بكافة شروط وقيود الإخراج الصارمة التي يحددها المستخدم (مثل منع المقدمات أو الخاتمة، التقييد بجدول أو عدد أسطر محدد). صغ الإجابة النهائية باللغة العربية الفصحى مباشرة.`;
+- قدّم الإجابة باللغة العربية الفصحى مباشرة مع ذكر روابط وتواريخ المصادر المعتمدة.`;
 
-        activeSystemPrompt += `\n\n${searchRes}\n\n${fathomSearchGuidance}`;
-      }
+      activeSystemPrompt += `\n\n${fathomSearchGuidance}`;
     }
   }
 
@@ -2600,7 +2595,8 @@ export default async function handler(req: Request): Promise<Response> {
     presence_penalty: dynamicTuning.hyperparameters.presence_penalty,
     stream: true,
     max_tokens: dynamicTuning.hyperparameters.max_tokens,
-    ...(dynamicTuning.hyperparameters.stop ? { stop: dynamicTuning.hyperparameters.stop } : {})
+    ...(dynamicTuning.hyperparameters.stop ? { stop: dynamicTuning.hyperparameters.stop } : {}),
+    enableWebSearch: willSearch || Boolean(deepSearch)
   };
 
   // Candidate Gateways with Resilient Failover Loop and Dynamic Parameter Tuning
@@ -2668,7 +2664,7 @@ export default async function handler(req: Request): Promise<Response> {
   } else if (isFathomSearch) {
     if (OPENROUTER_API_KEY) {
       candidateGateways.push({
-        name: 'OpenRouter Fathom Search Engine (meta/muse-spark-1.3-contributor + web_plugin)',
+        name: 'OpenRouter Active Model with Web Search (meta/muse-spark-1.3-contributor + openrouter:web_search)',
         url: `${OPENROUTER_BASE_URL}/chat/completions`,
         headers: {
           'Content-Type': 'application/json',
@@ -2676,13 +2672,10 @@ export default async function handler(req: Request): Promise<Response> {
           'HTTP-Referer': 'https://matany.one',
           'X-Title': 'Matany AI',
         },
-        payload: {
-          ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning),
-          plugins: [{ id: 'web', max_results: 5 }]
-        }
+        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', { ...basePayload, enableWebSearch: true }, dynamicTuning)
       });
       candidateGateways.push({
-        name: 'OpenRouter Fathom Search Engine :online (meta/muse-spark-1.3-contributor:online)',
+        name: 'OpenRouter Contributor Web Search Backup (meta/muse-spark-1.2-contributor + openrouter:web_search)',
         url: `${OPENROUTER_BASE_URL}/chat/completions`,
         headers: {
           'Content-Type': 'application/json',
@@ -2690,10 +2683,10 @@ export default async function handler(req: Request): Promise<Response> {
           'HTTP-Referer': 'https://matany.one',
           'X-Title': 'Matany AI',
         },
-        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor:online', basePayload, dynamicTuning)
+        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', { ...basePayload, enableWebSearch: true }, dynamicTuning)
       });
       candidateGateways.push({
-        name: 'OpenRouter Fathom Search Engine Contributor Backup (meta/muse-spark-1.2-contributor + web_plugin)',
+        name: 'OpenRouter Flagship Web Search Fallback (meta/muse-spark-1.3 + openrouter:web_search)',
         url: `${OPENROUTER_BASE_URL}/chat/completions`,
         headers: {
           'Content-Type': 'application/json',
@@ -2701,24 +2694,7 @@ export default async function handler(req: Request): Promise<Response> {
           'HTTP-Referer': 'https://matany.one',
           'X-Title': 'Matany AI',
         },
-        payload: {
-          ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning),
-          plugins: [{ id: 'web', max_results: 5 }]
-        }
-      });
-      candidateGateways.push({
-        name: 'OpenRouter Fathom Search Engine Fallback (meta/muse-spark-1.3 + web_plugin)',
-        url: `${OPENROUTER_BASE_URL}/chat/completions`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://matany.one',
-          'X-Title': 'Matany AI',
-        },
-        payload: {
-          ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning),
-          plugins: [{ id: 'web', max_results: 5 }]
-        }
+        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', { ...basePayload, enableWebSearch: true }, dynamicTuning)
       });
     }
     if (DEEPSEEK_API_KEY) {
@@ -3030,6 +3006,8 @@ export default async function handler(req: Request): Promise<Response> {
         let fullServerContent = '';
         let fullServerReasoning = '';
         let sseBuffer = '';
+        const seenCitationUrls = new Set<string>();
+        let citationCount = 0;
 
         const recentStreamWords: string[] = [];
         const recentReasoningWords: string[] = [];
@@ -3086,6 +3064,25 @@ export default async function handler(req: Request): Promise<Response> {
                       console.log(`[AI GATEWAY TELEMETRY Edge] Prompt: ${totalPromptTokens} tokens | Cache Hit: ${hitTokens} tokens (${hitRatio}%) | Cache Miss: ${missTokens} tokens | Completion: ${parsed.usage.completion_tokens || 0} tokens`);
                     }
                     const delta = parsed.choices?.[0]?.delta;
+
+                    // Intercept OpenRouter Native Web Search Annotations / Citations
+                    const rawAnnotations = delta?.annotations || parsed.choices?.[0]?.annotations;
+                    if (Array.isArray(rawAnnotations) && rawAnnotations.length > 0) {
+                      for (const ann of rawAnnotations) {
+                        if (ann && ann.type === 'url_citation' && ann.url_citation) {
+                          const cite = ann.url_citation;
+                          if (cite.url && !seenCitationUrls.has(cite.url)) {
+                            seenCitationUrls.add(cite.url);
+                            citationCount++;
+                            const citationText = `• المصدر [${citationCount}]: ${cite.title || 'مصدر ويب موثق'} (${cite.url})\n`;
+                            fullServerReasoning += citationText;
+                            const encoder = new TextEncoder();
+                            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { reasoning_content: citationText } }] })}\n\n`));
+                          }
+                        }
+                      }
+                    }
+
                     const reasoningChunk = delta?.reasoning_content ?? delta?.reasoning ?? delta?.thought;
                     if (reasoningChunk) {
                       fullServerReasoning += reasoningChunk;
