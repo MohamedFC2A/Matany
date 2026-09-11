@@ -262,6 +262,71 @@ export async function runDynamicParameterTunerTests(harness: TestHarness) {
       expect(DynamicParameterTuner.resolveModelFamily('fathom-cyber-2.6')).toBe('deepseek-pro');
       expect(DynamicParameterTuner.resolveModelFamily('meta/muse-spark-1.2-contributor')).toBe('muse-spark');
       expect(DynamicParameterTuner.resolveModelFamily('meta/muse-spark-1.3-contributor')).toBe('muse-spark');
+      expect(DynamicParameterTuner.resolveModelFamily('fathom-its-1')).toBe('fathom-its');
+      expect(DynamicParameterTuner.resolveModelFamily('fathom-its')).toBe('fathom-its');
+    });
+
+    // 17. Fathom ITS Exam & Language Assessment Intent
+    await harness.it('should detect FATHOM_ITS_EXAM_AND_LANGUAGE_ASSESSMENT with high reasoning effort and calibrated parameters', () => {
+      const request: DynamicTuningRequest = {
+        userPrompt: 'امتحني في حروف الجر باختبار MSQ نظيف ومستواه A2',
+        requestedModel: 'fathom-its-1',
+      };
+
+      const result = DynamicParameterTuner.tune(request);
+      expect(result.detectedIntent).toBe('FATHOM_ITS_EXAM_AND_LANGUAGE_ASSESSMENT');
+      expect(result.targetModelFamily).toBe('fathom-its');
+      expect(result.hyperparameters.temperature).toBe(0.35);
+      expect(result.hyperparameters.reasoning_effort).toBe('high');
+      expect(result.hyperparameters.max_thinking_tokens).toBe(4096);
+      expect(result.hyperparameters.max_tokens).toBe(16384);
+      expect(result.calibrationDirective).toContain('SOVEREIGN_PEDAGOGICAL_CEFR_EXAM_SYNTHESIS');
+      expect(result.calibrationDirective).toContain('A2');
+      expect(result.calibrationDirective).toContain('حروف الجر');
+    });
+
+    // 18. Contextual Pedagogical Extraction: History Mistakes & Review
+    await harness.it('should extract past conversation mistakes and target them in the exam directive when user asks to review previous lessons', () => {
+      const conversationHistory = [
+        {
+          role: 'user',
+          content: 'Yesterday I go to the cinema and watch a movie.'
+        },
+        {
+          role: 'assistant',
+          content: 'Good effort! Here is the correction:\n```correction\n{\n  "originalText": "Yesterday I go to the cinema",\n  "improvedText": "Yesterday I went to the cinema",\n  "ruleExplanation": "Use past simple went for completed past time yesterday.",\n  "category": "Grammar"\n}\n```\nGreat job, keep going!'
+        },
+        {
+          role: 'user',
+          content: 'امتحني في اللي فات والأخطاء اللي وقعت فيها فوق'
+        }
+      ];
+
+      const request: DynamicTuningRequest = {
+        userPrompt: 'امتحني في اللي فات والأخطاء اللي وقعت فيها فوق',
+        conversationHistory,
+        requestedModel: 'fathom-its-1'
+      };
+
+      const result = DynamicParameterTuner.tune(request);
+      expect(result.detectedIntent).toBe('FATHOM_ITS_EXAM_AND_LANGUAGE_ASSESSMENT');
+      expect(result.calibrationDirective).toContain('Yesterday I go to the cinema');
+      expect(result.calibrationDirective).toContain('Yesterday I went to the cinema');
+      expect(result.calibrationDirective).toContain('STRICT MSQ CONSTRUCTION INVARIANTS');
+      expect(result.calibrationDirective).toContain('Single Unambiguous Answer');
+    });
+
+    // 19. CEFR Level Hierarchy & Diagnostic Placement
+    await harness.it('should calibrate diagnostic placement assessment across levels when requested', () => {
+      const request: DynamicTuningRequest = {
+        userPrompt: 'قيم مستواي في اللغة الإنجليزية باختبار شامل',
+        requestedModel: 'fathom-its-1'
+      };
+
+      const result = DynamicParameterTuner.tune(request);
+      expect(result.detectedIntent).toBe('FATHOM_ITS_EXAM_AND_LANGUAGE_ASSESSMENT');
+      expect(result.calibrationDirective).toContain('Diagnostic Placement Assessment');
+      expect(result.calibrationDirective).toContain('جارٍ إعداد وتجهيز الامتحان الأكاديمي الشامل');
     });
   });
 }

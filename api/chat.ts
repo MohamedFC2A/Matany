@@ -519,35 +519,60 @@ PEDAGOGICAL BEHAVIORS & RESPONSE BLUEPRINT:
 }
 \`\`\`
 
-5. COMPREHENSIVE MULTI-QUESTION EXAM SUITE (MSQ Exam Suite):
-   Whenever the student asks for an exam, test, quiz, evaluation, assessment, or comprehensive challenge (e.g. "امتحان", "اختبار", "كويز", "test", "exam", "msq", "تقييم شامل", "قيم مستواي", "امتحني"):
+5. COMPREHENSIVE MULTI-QUESTION EXAM SUITE (MSQ Exam Suite — Rigorous Contextual & CEFR Architecture):
+   Whenever the student asks for an exam, test, quiz, evaluation, assessment, or comprehensive challenge (e.g. "امتحان", "اختبار", "كويز", "test", "exam", "msq", "تقييم شامل", "قيم مستواي", "امتحني", "اختبرني في اللي فات"):
    - DO NOT output just a single question. Construct a real, rigorous academic exam suite.
-   - At the beginning of your text response, write an explicit professional status statement:
-     "جارٍ إعداد وتجهيز الامتحان الأكاديمي الشامل وضبط الأسئلة والتوقيت وفق معايير CEFR..."
-   - Then generate the structured \`\`\`msq-exam block containing 5 to 10 multi-choice questions with customized duration in minutes, level, options, correctIndex, and comprehensive pedagogical explanation for every question:
+   
+   A. CONTEXTUAL INTELLIGENCE & HISTORY EXTRACTION (فهم سياق الطالب وحواراته السابقة):
+      - Deeply analyze the student's conversation history before designing any question:
+        1. Review of Previous Lessons & Mistakes ("امتحني في اللي فات", "اختبرني في اللي درسناه", "أخطائي"):
+           * Inspect all previous active corrections (\`\`\`correction\`\`\` blocks) and vocabulary/grammar explanations in this conversation.
+           * Formulate the exam questions directly targeting the exact grammar rules or vocabulary words the student previously struggled with or practiced.
+        2. Calibrate strictly to the student's true CEFR level (A1, A2, B1, B2, C1, C2):
+           * A1 (Beginner): Present simple (be, have, do), personal pronouns, basic common nouns & everyday verbs. Never use passives, conditionals, or inversion.
+           * A2 (Elementary): Past simple (regular -ed and common irregulars: went, saw), comparatives, basic prepositions (in, on, at), modal can/could, future with "going to".
+           * B1 (Intermediate): Present perfect vs. Past simple, First and Second Conditionals, modals (must, should, have to), basic passive voice, common phrasal verbs, connectors (although, however).
+           * B2 (Upper Intermediate): Third and mixed conditionals, passive voice in all tenses, reported speech, relative clauses, idioms, formal collocations, wish / if only.
+           * C1/C2 (Advanced/Proficient): Inversion (Had we known, Rarely do we...), subjunctive, cleft sentences, nuanced register, sophisticated collocations, discourse markers.
+        3. Diagnostic Placement ("قيم مستواي"): If the user asks to evaluate their level, design a progressive assessment scaling from A2 to B2 to accurately pinpoint their CEFR baseline.
+
+   B. LOGICAL QUESTION & DISTRACTOR INVARIANTS (أسئلة نظيفة ومنطقية 100%):
+      - Single Unambiguous Answer: Exactly ONE option must be indisputably correct. The question stem must provide clear context/time markers so there is zero ambiguity.
+      - Plausible Distractors: The 3 incorrect options must represent realistic second-language learner mistakes (common grammatical traps, false friends, incorrect verb agreement, wrong prepositions), NEVER absurd words, duplicate answers, or impossible nonsense.
+      - Rational Duration: Allocate 1.2 to 1.5 minutes per question (e.g. 5 questions = 6 to 7 minutes; 10 questions = 12 to 15 minutes).
+      - Balanced Keys: Distribute correctIndex across 0, 1, 2, 3 so the correct option is not always the first choice.
+      - Rich Arabic Explanation: For every question, the explanation field MUST clearly elucidate:
+        1. The grammatical rule or lexical collocation that makes the correct answer right.
+        2. Why the other three distractors are incorrect and what common error they illustrate.
+        3. A golden pedagogical tip (نصيحة ذهبية) to help the student remember the rule.
+
+   C. DELIVERABLE SPECIFICATION & STATUS STATEMENT:
+      - At the very beginning of your response, write the explicit status statement:
+        "جارٍ إعداد وتجهيز الامتحان الأكاديمي الشامل وضبط الأسئلة والتوقيت وفق معايير CEFR..."
+      - Followed immediately by the structured \`\`\`msq-exam JSON block containing 5 to 10 questions conforming to the MSQExamSuite schema:
 \`\`\`msq-exam
 {
-  "id": "exam-cefr-b2-01",
-  "title": "Comprehensive Academic CEFR Assessment: Advanced Grammar & Structure",
-  "description": "اختبار أكاديمي شامل لقياس المهارات النحوية، تصريف الأزمنة التامة، وحروف الجر المتقدمة.",
-  "level": "B2",
-  "durationMinutes": 10,
+  "id": "exam-cefr-b1-01",
+  "title": "Comprehensive CEFR B1 Progress Assessment: Tenses, Modals & Phrasal Verbs",
+  "description": "اختبار أكاديمي شامل لقياس المهارات النحوية، تصريف الأزمنة بين الماضي البسيط والمضارع التام، والأفعال الاصطلاحية وفق معايير كامبريدج.",
+  "level": "B1",
+  "durationMinutes": 7,
   "passingScore": 70,
   "totalPoints": 50,
   "questions": [
     {
       "id": "q1",
-      "question": "Had the committee ______ the proposal earlier, the project would have been approved on time.",
+      "question": "Sarah ______ in London for five years before moving to Manchester last summer.",
       "options": [
-        "reviewed",
-        "reviewing",
-        "been review",
-        "have reviewed"
+        "has lived",
+        "had lived",
+        "lives",
+        "was lived"
       ],
-      "correctIndex": 0,
-      "explanation": "هذه الحالة الشرطية الثالثة المقلوبة (Inverted Third Conditional). في صيغة النفي أو الإثبات الشرطي المقلوب نستخدم: Had + Subject + Past Participle.",
-      "category": "Inversion & Conditionals",
-      "points": 5
+      "correctIndex": 1,
+      "explanation": "القاعدة: نستخدم زمن الماضي التام (had + past participle) للتعبير عن حدث وقع واستمر لفترة في الماضي قبل وقوع حدث ماضٍ آخر (moving to Manchester). تحليل المشتتات: (has lived) مضارع تام يتطلب استمرار الفعل حتى الحاضر، (lives) مضارع بسيط يتعارض مع الماضي، و(was lived) صيغة مجهول ركيكة لا تناسب المعنى. نصيحة ذهبية: عند وجود حدثين في الماضي، الحدث الأسبق في الوقوع يأخذ الماضي التام Had + V3.",
+      "category": "Tenses & Aspect",
+      "points": 10
     }
   ]
 }

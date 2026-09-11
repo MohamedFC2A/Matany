@@ -17,6 +17,7 @@ export type UserIntentCategory =
   | 'CODE_ENGINEERING_AND_ARCHITECTURE'
   | 'SVG_VECTOR_STUDIO_AND_DESIGN'
   | 'NEURAL_IMAGE_STUDIO_AND_PROCESSING'
+  | 'FATHOM_ITS_EXAM_AND_LANGUAGE_ASSESSMENT'
   | 'MATHEMATICAL_AND_DEDUCTIVE_LOGIC'
   | 'SCIENTIFIC_AND_ACADEMIC_RESEARCH'
   | 'FACTUAL_SEARCH_AND_REALTIME_GROUNDING'
@@ -37,6 +38,7 @@ export type ModelFamily =
   | 'deepseek-vision'
   | 'magnum'
   | 'fathom-search'
+  | 'fathom-its'
   | 'generic';
 
 export type TaskComplexity =
@@ -247,6 +249,32 @@ export const TRIVIAL_DIRECT_QA_PATTERNS = [
   /^(?:شكرا|شكراً|ألف\s*شكر|تسلم|يعطيك\s*العافية|تمام|أوكي|اوكي|تمام\s*جداً|ممتاز|عظيم|جميل|حسناً|حسنا|أكمل|اكمل|نعم|لا)[.!؟?]?$/iu,
 ];
 
+export const EXAM_ASSESSMENT_PATTERNS = [
+  /(?:امتحان|اختبار|كويز|قيّ?م\s*مستواي|تحدي\s*لغوي|تحدي\s*شامل|اختبرني|امتحني|msq|exam|quiz|test\s*me|assessment|cefr|evaluation|placement\s*test)/i,
+  /(?:اختبرني\s+في|امتحني\s+في|اعملي\s+(?:امتحان|اختبار|كويز)|اعمل\s+لي\s+(?:امتحان|اختبار|كويز)|عايز\s+(?:امتحان|اختبار|كويز)|عاوز\s+(?:امتحان|اختبار|كويز)|بدي\s+(?:امتحان|اختبار|كويز)|اريد\s+(?:امتحان|اختبار|كويز)|نبي\s+(?:امتحان|اختبار|كويز))/i,
+  /(?:قيم\s+مستواي|قيّم\s+مستواي|فحص\s+مستوى|تحديد\s+مستوى|اختبار\s+تحديد\s+المستوى|check\s+my\s+level|test\s+my\s+english)/i,
+  /(?:اسئلة\s+اختيار\s+من\s+متعدد|أسئلة\s+اختيار\s+من\s+متعدد|multiple\s*choice\s*questions?)/i
+];
+
+export interface PedagogicalExamContext {
+  targetLevel: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+  levelDescriptorAr: string;
+  cefrGrammarScope: string;
+  topic: string;
+  isDiagnosticPlacement: boolean;
+  isHistoryReview: boolean;
+  questionCount: number;
+  durationMinutes: number;
+  passingScore: number;
+  historyMistakes: Array<{
+    original: string;
+    improved: string;
+    rule: string;
+    category?: string;
+  }>;
+  recentVocabulary: string[];
+}
+
 export class DynamicParameterTuner {
   /**
    * Deterministically checks whether user input expresses image generation, creation, or editing intent.
@@ -331,7 +359,231 @@ export class DynamicParameterTuner {
       return 'fathom-search';
     }
 
+    if (m.includes('its') || m === 'fathom-its-1' || m === 'fathom-its') {
+      return 'fathom-its';
+    }
+
     return 'generic';
+  }
+
+  /**
+   * Deep pedagogical context extractor for Fathom ITS & CEFR Language Assessments.
+   * Extracts target CEFR level, grammar scope, topic, past student mistakes from history,
+   * question count, and rational time duration.
+   */
+  public static extractPedagogicalExamContext(
+    userPrompt: string,
+    conversationHistory?: Array<{ role: string; content: any }>,
+    requestedModel?: string
+  ): PedagogicalExamContext {
+    const text = (userPrompt || '').trim();
+    const history = Array.isArray(conversationHistory) ? conversationHistory : [];
+
+    // 1. Detect target CEFR Level
+    let targetLevel: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' = 'B1';
+    let levelExplicitlyFound = false;
+    let isDiagnosticPlacement = false;
+
+    // Check for explicit level in user prompt
+    if (/\b(?:a1|مبتدئ\s*جداً|مبتدئ\s*جدا|level\s*1|المستوى\s*الأول|مستوى\s*أول|مستوى\s*1)\b/i.test(text)) {
+      targetLevel = 'A1';
+      levelExplicitlyFound = true;
+    } else if (/\b(?:a2|مبتدئ|ابتدائي|level\s*2|المستوى\s*الثاني|مستوى\s*ثاني|مستوى\s*2)\b/i.test(text)) {
+      targetLevel = 'A2';
+      levelExplicitlyFound = true;
+    } else if (/\b(?:b1|متوسط|intermediate|level\s*3|المستوى\s*الثالث|مستوى\s*ثالث|مستوى\s*3)\b/i.test(text)) {
+      targetLevel = 'B1';
+      levelExplicitlyFound = true;
+    } else if (/\b(?:b2|فوق\s*المتوسط|upper\s*intermediate|level\s*4|المستوى\s*الرابع|مستوى\s*رابع|مستوى\s*4)\b/i.test(text)) {
+      targetLevel = 'B2';
+      levelExplicitlyFound = true;
+    } else if (/\b(?:c1|متقدم|advanced|level\s*5|المستوى\s*الخامس|مستوى\s*خامس|مستوى\s*5)\b/i.test(text)) {
+      targetLevel = 'C1';
+      levelExplicitlyFound = true;
+    } else if (/\b(?:c2|محترف|إتقان|mastery|proficient|level\s*6|المستوى\s*السادس|مستوى\s*سادس|مستوى\s*6)\b/i.test(text)) {
+      targetLevel = 'C2';
+      levelExplicitlyFound = true;
+    } else if (/(?:قيم\s+مستواي|قيّم\s+مستواي|فحص\s+مستوى|تحديد\s+مستوى|اختبار\s+تحديد\s+المستوى|check\s+my\s+level|placement\s*test)/i.test(text)) {
+      isDiagnosticPlacement = true;
+      targetLevel = 'B1';
+    }
+
+    // If level not explicit in prompt, search backward in conversation history
+    if (!levelExplicitlyFound && !isDiagnosticPlacement) {
+      for (let i = history.length - 1; i >= 0; i--) {
+        const msg = history[i];
+        const content = typeof msg.content === 'string'
+          ? msg.content
+          : Array.isArray(msg.content)
+            ? msg.content.map((c: any) => c.text || '').join(' ')
+            : JSON.stringify(msg.content || '');
+
+        // Check badge for current level
+        const badgeMatch = /"currentLevel"\s*:\s*"(A1|A2|B1|B2|C1|C2)"/i.exec(content);
+        if (badgeMatch && badgeMatch[1]) {
+          targetLevel = badgeMatch[1].toUpperCase() as any;
+          levelExplicitlyFound = true;
+          break;
+        }
+
+        // Check prior exam for level
+        const examMatch = /"level"\s*:\s*"(A1|A2|B1|B2|C1|C2)"/i.exec(content);
+        if (examMatch && examMatch[1]) {
+          targetLevel = examMatch[1].toUpperCase() as any;
+          levelExplicitlyFound = true;
+          break;
+        }
+
+        // Check user statements about their level in past turns
+        if (msg.role === 'user') {
+          if (/\b(?:a1|مبتدئ\s*جداً|مبتدئ\s*جدا)\b/i.test(content)) {
+            targetLevel = 'A1';
+            levelExplicitlyFound = true;
+            break;
+          } else if (/\b(?:a2|مبتدئ|ابتدائي)\b/i.test(content)) {
+            targetLevel = 'A2';
+            levelExplicitlyFound = true;
+            break;
+          } else if (/\b(?:b1|متوسط)\b/i.test(content)) {
+            targetLevel = 'B1';
+            levelExplicitlyFound = true;
+            break;
+          } else if (/\b(?:b2|فوق\s*المتوسط)\b/i.test(content)) {
+            targetLevel = 'B2';
+            levelExplicitlyFound = true;
+            break;
+          } else if (/\b(?:c1|متقدم)\b/i.test(content)) {
+            targetLevel = 'C1';
+            levelExplicitlyFound = true;
+            break;
+          } else if (/\b(?:c2|محترف)\b/i.test(content)) {
+            targetLevel = 'C2';
+            levelExplicitlyFound = true;
+            break;
+          }
+        }
+      }
+    }
+
+    // 2. Extract past student mistakes from history (```correction ... ```)
+    const historyMistakes: Array<{ original: string; improved: string; rule: string; category?: string }> = [];
+    for (const msg of history) {
+      if (msg.role === 'assistant') {
+        const content = typeof msg.content === 'string'
+          ? msg.content
+          : Array.isArray(msg.content)
+            ? msg.content.map((c: any) => c.text || '').join(' ')
+            : '';
+
+        const matches = content.matchAll(/```correction\s*(\{[\s\S]*?\})\s*```/gi);
+        for (const match of matches) {
+          try {
+            const parsed = JSON.parse(match[1]);
+            if (parsed && parsed.originalText && parsed.improvedText) {
+              historyMistakes.push({
+                original: parsed.originalText,
+                improved: parsed.improvedText,
+                rule: parsed.ruleExplanation || '',
+                category: parsed.category || 'Grammar'
+              });
+            }
+          } catch {
+            // ignore malformed blocks
+          }
+        }
+      }
+    }
+
+    // 3. Detect Topic & History Review Intent
+    const isHistoryReview = /(?:اللي\s*(?:فات|درسناه|اخدناه|أخذناه|تعلمناه|فوق)|المحادثة\s*السابقة|الأخطاء|أخطائي|my\s*mistakes|previous\s*lesson|review|سياق\s*المحادثة)/i.test(text) ||
+      (historyMistakes.length > 0 && /(?:أخطاء|غلطات|تصحيح|مراجعة)/i.test(text));
+
+    let topic = 'Comprehensive Grammar & Vocabulary Assessment';
+    if (isHistoryReview && historyMistakes.length > 0) {
+      topic = 'Review and Mastery of Previous Conversational Mistakes & Corrections (مراجعة الأخطاء المرتكبة في المحادثة السابقة)';
+    } else if (/(?:حروف\s*الجر|حرف\s*جر|prepositions?)/i.test(text)) {
+      topic = 'Prepositions of Time, Place, and Direction (حروف الجر)';
+    } else if (/(?:مضارع\s*تام|present\s*perfect)/i.test(text)) {
+      topic = 'Present Perfect vs. Past Simple (المضارع التام والماضي البسيط)';
+    } else if (/(?:ماضي\s*بسيط|past\s*simple)/i.test(text)) {
+      topic = 'Past Simple Tense and Irregular Verbs (الماضي البسيط والأفعال الشاذة)';
+    } else if (/(?:أزمنة|ازمنة|زمن|tenses?)/i.test(text)) {
+      topic = 'English Tenses & Temporal Aspects (أزمنة الأفعال الإنجليزية)';
+    } else if (/(?:شرط|حالات\s*if|حالة\s*شرطية|conditionals?)/i.test(text)) {
+      topic = 'Conditionals and Hypothetical Structures (الجمل والحالات الشرطية)';
+    } else if (/(?:مبني\s*للمجهول|passive\s*voice)/i.test(text)) {
+      topic = 'Passive Voice Constructions (المبني للمجهول)';
+    } else if (/(?:أفعال\s*اصطلاحية|افعال\s*اصطلاحية|phrasal\s*verbs?)/i.test(text)) {
+      topic = 'Essential Phrasal Verbs & Collocations (الأفعال المركبة والمتلازمات اللفظية)';
+    } else if (/(?:كلمات|مفردات|vocabulary|vocab)/i.test(text)) {
+      topic = 'Lexical Vocabulary & Contextual Word Choice (المفردات اللغوية وحصيلة الكلمات)';
+    } else if (/(?:سفر|مطارات|فنادق|travel)/i.test(text)) {
+      topic = 'Travel, Navigation & Hospitality English (الإنجليزية للسفر والمطارات)';
+    } else if (/(?:أعمال|وظائف|مقابلة\s*عمل|business)/i.test(text)) {
+      topic = 'Professional Business English & Workplace Communication (الإنجليزية المهنية وبيئة العمل)';
+    } else if (isDiagnosticPlacement) {
+      topic = 'Diagnostic Placement Assessment (اختبار تحديد المستوى الأكاديمي الشامل)';
+    }
+
+    // 4. Question Count & Duration
+    let questionCount = 5;
+    const countMatch = /(?:(\d+)\s*(?:اسئلة|أسئلة|سؤال|questions?|q\b)|(?:اسئلة|أسئلة|سؤال)\s*(\d+))/i.exec(text);
+    if (countMatch) {
+      const num = parseInt(countMatch[1] || countMatch[2], 10);
+      if (!isNaN(num) && num >= 3 && num <= 20) {
+        questionCount = num;
+      }
+    } else if (isDiagnosticPlacement) {
+      questionCount = 6;
+    }
+
+    // Rational exam duration: 1.2 to 1.5 minutes per question
+    const durationMinutes = Math.max(5, Math.ceil(questionCount * 1.4));
+    const passingScore = 70;
+
+    // CEFR Scope details
+    const cefrDescriptors: Record<'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2', { ar: string; scope: string }> = {
+      A1: {
+        ar: 'مبتدئ جداً (Breakthrough)',
+        scope: 'Present simple (be, have, do), basic personal pronouns (I, you, he, she), singular/plural with -s, basic demonstratives (this, that), everyday concrete vocabulary (family, food, numbers, colors). NO complex clauses, NO inversion, NO passives.'
+      },
+      A2: {
+        ar: 'مبتدئ / أساسي (Waystage)',
+        scope: 'Past simple (regular -ed, common irregulars: went, saw, bought), future with "going to", comparative adjectives (bigger, more expensive), basic prepositions (in, on, at, under), modal "can/could". Everyday interactions and routine tasks.'
+      },
+      B1: {
+        ar: 'متوسط (Threshold)',
+        scope: 'Present perfect vs. Past simple (since, for, already, yet), First & Second conditionals (If + past, would), modals of obligation/permission (must, have to, should), basic passive voice, common phrasal verbs, connectors (although, however).'
+      },
+      B2: {
+        ar: 'فوق المتوسط (Vantage)',
+        scope: 'Third conditionals, mixed conditionals, passive voice in all tenses, reported speech, relative clauses (defining/non-defining), wish / if only, advanced phrasal verbs, collocations, formal linking devices (moreover, whereas, despite).'
+      },
+      C1: {
+        ar: 'متقدم (Effective Operational Proficiency)',
+        scope: 'Inversion (Had I known, Little did she realize, Seldom have we seen), subjunctive mood (It is essential that he be...), cleft sentences (It was... that), nuanced idioms, subtle collocations, discourse markers, stylistic precision.'
+      },
+      C2: {
+        ar: 'محترف / إتقان تام (Mastery)',
+        scope: 'Mastery-level idiomatic precision, literary inversion, archaic or subtle grammatical subtleties, complex rhetoric, socio-linguistic register nuances, near-native Oxford/Cambridge proficiency.'
+      }
+    };
+
+    const descriptor = cefrDescriptors[targetLevel] || cefrDescriptors.B1;
+
+    return {
+      targetLevel,
+      levelDescriptorAr: descriptor.ar,
+      cefrGrammarScope: descriptor.scope,
+      topic,
+      isDiagnosticPlacement,
+      isHistoryReview,
+      questionCount,
+      durationMinutes,
+      passingScore,
+      historyMistakes,
+      recentVocabulary: []
+    };
   }
 
   /**
@@ -752,6 +1004,21 @@ export class DynamicParameterTuner {
       };
     }
 
+    // 1.b. Fathom ITS Language Exam & Multi-Question Assessment Intent Check
+    const isExamRequest = EXAM_ASSESSMENT_PATTERNS.some(p => p.test(text)) ||
+      (request.requestedModel?.includes('its') && /(?:امتحان|اختبار|كويز|quiz|exam|test|اسئلة|أسئلة|تحدي|تقييم|قيم|قيّم|قياس)/i.test(text)) ||
+      (isFollowUpPrompt && EXAM_ASSESSMENT_PATTERNS.some(p => p.test(historyText)) && /(?:ابدأ|يلا|جاهز|start|ready|go|تمام|نعم)/i.test(text));
+
+    if (isExamRequest) {
+      return {
+        intent: 'FATHOM_ITS_EXAM_AND_LANGUAGE_ASSESSMENT',
+        confidence: 0.99,
+        complexity: 'DEEP_ANALYTICAL',
+        hallucinationRisk: 'LOW',
+        rationale: 'Comprehensive pedagogical CEFR language assessment and MSQ exam suite synthesis requested.'
+      };
+    }
+
     // 2. Pure Greeting / Simple Arithmetic / Trivial Direct QA (Sub-Second Latency & Zero Reasoning Stall)
     if (isTrivialOrDirect) {
       return {
@@ -1024,6 +1291,15 @@ export class DynamicParameterTuner {
         max_tokens = 16384;
         break;
 
+      case 'FATHOM_ITS_EXAM_AND_LANGUAGE_ASSESSMENT':
+        // Optimal temperature for linguistic accuracy, plausible distractor variety, and strict zero hallucination
+        temperature = 0.35;
+        top_p = 0.95;
+        frequency_penalty = 0.05;
+        presence_penalty = 0.0;
+        max_tokens = 16384;
+        break;
+
       case 'MATHEMATICAL_AND_DEDUCTIVE_LOGIC':
         // Minimum entropy to prevent logic branch wandering
         temperature = 0.15;
@@ -1183,6 +1459,23 @@ export class DynamicParameterTuner {
         max_tokens = 16384;
         break;
 
+      case 'fathom-its':
+        // Fathom ITS (Sovereign Language Intelligent Tutoring System)
+        if (intent === 'FATHOM_ITS_EXAM_AND_LANGUAGE_ASSESSMENT') {
+          temperature = 0.35;
+          top_p = 0.95;
+          frequency_penalty = 0.05;
+          presence_penalty = 0.0;
+          max_tokens = 16384;
+        } else {
+          temperature = 0.40;
+          top_p = 0.95;
+          frequency_penalty = 0.05;
+          presence_penalty = 0.0;
+          max_tokens = 12288;
+        }
+        break;
+
       default:
         break;
     }
@@ -1201,6 +1494,11 @@ export class DynamicParameterTuner {
       thinking_mode = 'disabled';
       reasoning_effort = 'low';
       max_thinking_tokens = 0;
+    } else if (intent === 'FATHOM_ITS_EXAM_AND_LANGUAGE_ASSESSMENT') {
+      // High reasoning effort for rigorous pedagogical question crafting, CEFR calibration, and plausible distractor design
+      thinking_mode = 'enabled';
+      reasoning_effort = 'high';
+      max_thinking_tokens = 4096;
     } else if (complexity === 'LIGHT' || intent === 'GENERAL_CONVERSATION_AND_QUICK_QA') {
       // Light queries / greetings / simple arithmetic: minimal reasoning effort with strict 256-token thinking budget
       // to guarantee instant sub-second TTFT and eliminate unnecessary reasoning loops
@@ -1361,6 +1659,42 @@ export class DynamicParameterTuner {
               '7) [بروتوكول هندسة النصوص والأحرف واللوحات والشعارات في الصور - Sovereign In-Image Typography & OCR Readability]: عند وجود أي نص، كتابة، لوحة، لافتة، أو شعار في الصورة: حدد النص الدقيق بين علامات تنصيص exact text "..."، وألزم البرومبت بـ: crisp legible typography, authentic fonts, razor-sharp character edges, zero gibberish, zero scrambled letters, fully legible by optical character recognition (OCR) and humans. وعند طلب لوحة سيارة مصرية أو عربية، التزم بالمواصفات الرسمية للشريط العلوي والمعدن السفلي العاكس بحروف وأرقام عربية بارزة مقروءة 100%. يُحظر تماماً تكرار ملاحظات النظام السياقية "[ملاحظة: ...]" في ردك. ' +
               '8) [الحظر الصارم لتشخيصات الدعم الفني والاعتذارات والبدائل الوهمية - ZERO TROUBLESHOOTING LECTURES & APOLOGIES]: يُحظر تماماً وبشكل قاطع كتابة أي رسائل تشخيصية أو اعتذارات دعم فني للمستخدم (مثل: "المشكلة غالباً ليست في التصميم نفسه، بل في عدم تقديم خدمة توليد الصور العصبية للصورة داخل واجهة المحادثة لديك... الأسباب المحتملة: انقطاع مؤقت... متصفحك لا يدعم... يمكنني تزويدك بتصميم إعلاني كود SVG..."). التزم حصراً وبنسبة 100% بإخراج كتلة ```neural-image``` النظيفة مع الشرح العربي المباشر لما تم تنفيذه، دون أي تبرير تقني أو تنصل أو اقتراح للـ SVG كبديل.')
           : 'منظومة المعالجة والتوليد العصبي فائق الدقة للصور (FLUX.1 [schnell] Neural Image Studio) وحفظ التفاصيل الفوتوغرافية بنسبة 100% مخصصة حصرياً لطرازات سايبر وكوانت الفائقة (Fathom Quant 3 / Fathom Cyber Ultra 2.6). وضّح للمستخدم برقي واحترافية أن توليد وتعديل الصور يتطلب تفعيل Fathom Quant 3 أو Fathom Cyber Ultra 2.6 دون تحويل الصورة إلى SVG مع الحظر التام لتحويل الصور إلى متجهات.'
+      },
+      FATHOM_ITS_EXAM_AND_LANGUAGE_ASSESSMENT: {
+        ar: 'تصميم الاختبارات الأكاديمية المقننة وامتحانات الـ MSQ (Fathom ITS Exam Suite)',
+        mode: 'SOVEREIGN_PEDAGOGICAL_CEFR_EXAM_SYNTHESIS',
+        directive: (() => {
+          const pedContext = DynamicParameterTuner.extractPedagogicalExamContext(
+            contextOptions?.userPrompt || '',
+            contextOptions?.conversationHistory,
+            requestedModel
+          );
+
+          let mistakesBlock = '';
+          if (pedContext.historyMistakes.length > 0) {
+            mistakesBlock = `\n  • [بنك الأخطاء المستخلصة من حوار الطالب السابق — يُلزم فحصها في أسئلة الامتحان]:\n` +
+              pedContext.historyMistakes.slice(0, 5).map((m, idx) =>
+                `    ${idx + 1}. خطأ الطالب: "${m.original}" -> الصواب: "${m.improved}" (القاعدة: ${m.rule})`
+              ).join('\n');
+          }
+
+          return `أنت المعماري البيداغوجي ومصمم الامتحانات الأكاديمية المعتمدة لـ Fathom ITS 1 (Cambridge/Oxford Standard): ` +
+            `\n  • المستوى المستهدف: [${pedContext.targetLevel} - ${pedContext.levelDescriptorAr}]` +
+            `\n  • نطاق القواعد والمفردات المسموح بها لهذا المستوى: ${pedContext.cefrGrammarScope}` +
+            `\n  • موضوع الاختبار: [${pedContext.topic}]` +
+            `\n  • عدد الأسئلة المطلوب: ${pedContext.questionCount} أسئلة | المدة الزمنية المنطقية: ${pedContext.durationMinutes} دقيقة (${(pedContext.durationMinutes / pedContext.questionCount).toFixed(1)} دقيقة لكل سؤال) | درجة النجاح: ${pedContext.passingScore}%` +
+            mistakesBlock +
+            `\n  • [قواعد الصياغة الأكاديمية الصارمة - STRICT MSQ CONSTRUCTION INVARIANTS]:` +
+            `\n    1) [مطابقة المستوى بنسبة 100% - Zero Level Drift]: التزم حصراً بمستوى ${pedContext.targetLevel}. يُحظر تماماً طرح أسئلة معقدة لمستويات عليا إذا كان الطالب مبتدئاً (مثل منع أسئلة Inversion لمستويات A1/A2/B1)، كما يُحظر طرح أسئلة بدائية إذا كان المستوى متقدماً.` +
+            `\n    2) [حل وحيد قطعي لا لبس فيه - Single Unambiguous Answer]: يجب أن يكون لكل سؤال خيار واحد فقط صحيح 100% لغوياً وسياقياً، وأن توفر جملة السؤال قرائن سياقية وزمنية قاطعة (Context Clues) تحسم الإجابة دون أي مجال للتأويل.` +
+            `\n    3) [مشتتات واقعية وذكية - Plausible Distractors]: الخيارات الثلاثة الخاطئة يجب أن تمثل أخطاء شائعة واقعية يقع فيها متعلمو اللغة الإنجليزية (Common L2 Traps)، وليست كلمات عشوائية أو خيارات هزلية غير معقولة.` +
+            `\n    4) [توزيع الإجابات الصحيحة]: نوّع في موضع الإجابة الصحيحة correctIndex بين (0، 1، 2، 3) ولا تجعلها في نفس الموقع دائماً.` +
+            `\n    5) [شرح بيداغوجي غني بالعربية]: حقل explanation لكل سؤال يجب أن يشرح بوضوح: أ) سبب صحة الخيار المختار، ب) لماذا استُبعدت الخيارات الأخرى، ج) قاعدة ذهبية لتذكر الحل.` +
+            `\n    6) [بروتوكول البدء والتسليم الفوري]: ابدأ ردك الخارجي فوراً بالعبارة الرسمية:` +
+            `\n       "جارٍ إعداد وتجهيز الامتحان الأكاديمي الشامل وضبط الأسئلة والتوقيت وفق معايير CEFR..."` +
+            `\n       ثم أخرج فوراً ومباشرة كتلة \`\`\`msq-exam {...} \`\`\` النظيفة والخالية من أي أخطاء syntax أو markdown.` +
+            `\n    7) [حظر تام للإيموجي]: يُحظر تماماً استخدام أي إيموجي نهائياً داخل نصوص الأسئلة أو الشرح أو JSON.`;
+        })()
       },
       MATHEMATICAL_AND_DEDUCTIVE_LOGIC: {
         ar: 'الاستدلال الاستنباطي الرياضي والفيزيائي والمنطق الصارم',

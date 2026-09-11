@@ -11,9 +11,12 @@ export function getModelDisplayName(model?: string, isMatany?: boolean): string 
       return 'Fathom Cyber Ultra 2.6';
     case 'fathom-its-1':
       return 'Fathom ITS 1';
+    case 'fathom-search':
+      return 'Fathom Search';
     default:
       if (model.includes('its')) return 'Fathom ITS 1';
       if (model.includes('cyber') || model.includes('ultra')) return 'Fathom Cyber Ultra 2.6';
+      if (model.includes('search')) return 'Fathom Search';
       return 'Fathom Quant 3';
   }
 }
