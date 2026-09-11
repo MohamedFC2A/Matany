@@ -1634,7 +1634,7 @@ export class DynamicParameterTuner {
         sort: isThroughputTask ? 'throughput' : 'latency',
         allow_fallbacks: true,
         require_parameters: true,
-        data_collection: 'deny'
+        data_collection: 'allow'
       };
 
       const thinkingMode = candidateParams.thinking_mode || 'enabled';
@@ -1864,8 +1864,10 @@ export class DynamicParameterTuner {
           sort: 'latency',
           allow_fallbacks: true,
           require_parameters: true,
-          data_collection: 'deny'
+          data_collection: 'allow'
         };
+      } else if (cleanPayload.provider.data_collection === 'deny') {
+        cleanPayload.provider.data_collection = 'allow';
       }
 
       // 5. OpenRouter Stream Usage Telemetry
