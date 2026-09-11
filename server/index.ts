@@ -1664,15 +1664,15 @@ async function extractVisualContext(
 
     const dynamicTuning = DynamicParameterTuner.tune({
       userPrompt: userQuestion || 'استيعاب وفهم سياقي تلقائي لمحتوى الصور المرفقة',
-      requestedModel: 'meta/muse-spark-1.3',
+      requestedModel: 'meta/muse-spark-1.3-contributor',
       hasMultimodalImages: true,
     });
 
-    // 1. Primary OpenRouter Vision Gateway (meta/muse-spark-1.3)
+    // 1. Primary OpenRouter Vision Gateway (meta/muse-spark-1.3-contributor)
     if (OPENROUTER_API_KEY) {
       try {
         const sparkPayload = DynamicParameterTuner.tuneGatewayPayload(
-          'meta/muse-spark-1.3',
+          'meta/muse-spark-1.3-contributor',
           {
             messages: formattedVisionItems,
             stream: false,
@@ -1687,7 +1687,7 @@ async function extractVisualContext(
             'HTTP-Referer': 'https://matany.one',
             'X-Title': 'Matany AI',
           },
-          body: JSON.stringify(sparkPayload),
+          body: JSON.stringify(DynamicParameterTuner.sanitizeForGateway(`${OPENROUTER_BASE_URL}/chat/completions`, sparkPayload)),
           signal
         });
 
@@ -1695,25 +1695,25 @@ async function extractVisualContext(
           const data = await visionRes.json();
           const result = data.choices?.[0]?.message?.content || '';
           if (result && result.trim()) {
-            console.log(`[Fathom Cam Vision] Extracted ${result.length} chars of visual perception via OpenRouter Muse Spark 1.3.`);
+            console.log(`[Fathom Cam Vision] Extracted ${result.length} chars of visual perception via OpenRouter Muse Spark 1.3 Contributor.`);
             visionContextCache.set(cacheKey, { result: result.trim(), expiresAt: Date.now() + VISION_CACHE_TTL_MS });
             return result.trim();
           }
         } else {
           const errText = await visionRes.text().catch(() => '');
-          console.warn('[Fathom Cam Vision] OpenRouter Muse Spark HTTP Error:', visionRes.status, errText);
+          console.warn('[Fathom Cam Vision] OpenRouter Muse Spark Contributor HTTP Error:', visionRes.status, errText);
         }
       } catch (sparkErr: any) {
         if (sparkErr.name === 'AbortError') throw sparkErr;
-        console.warn('[Fathom Cam Vision] OpenRouter Muse Spark Exception:', sparkErr.message);
+        console.warn('[Fathom Cam Vision] OpenRouter Muse Spark Contributor Exception:', sparkErr.message);
       }
     }
 
-    // 2. OpenRouter Meta Muse Spark 1.2 Vision Backup
+    // 2. OpenRouter Meta Muse Spark 1.2 Vision Contributor Backup
     if (OPENROUTER_API_KEY) {
       try {
         const visionPayload = DynamicParameterTuner.tuneGatewayPayload(
-          'meta/muse-spark-1.2',
+          'meta/muse-spark-1.2-contributor',
           {
             messages: formattedVisionItems,
             stream: false,
@@ -3098,7 +3098,29 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     if (hasMultimodal || isVision) {
       if (OPENROUTER_API_KEY) {
         gateCandidates.push({
-          name: 'OpenRouter Meta Muse Spark 1.3 Multimodal Vision (meta/muse-spark-1.3 @ openrouter.ai)',
+          name: 'OpenRouter Meta Muse Spark 1.3 Contributor Vision (meta/muse-spark-1.3-contributor @ openrouter.ai)',
+          url: `${OPENROUTER_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
+        });
+        gateCandidates.push({
+          name: 'OpenRouter Meta Muse Spark 1.2 Contributor Multimodal (Backup)',
+          url: `${OPENROUTER_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning)
+        });
+        gateCandidates.push({
+          name: 'OpenRouter Meta Muse Spark 1.3 Multimodal Vision Fallback',
           url: `${OPENROUTER_BASE_URL}/chat/completions`,
           headers: {
             'Content-Type': 'application/json',
@@ -3107,17 +3129,6 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             'X-Title': 'Matany AI',
           },
           payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
-        });
-        gateCandidates.push({
-          name: 'OpenRouter Meta Muse Spark 1.2 Multimodal (Backup)',
-          url: `${OPENROUTER_BASE_URL}/chat/completions`,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'HTTP-Referer': 'https://matany.one',
-            'X-Title': 'Matany AI',
-          },
-          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2', basePayload, dynamicTuning)
         });
         gateCandidates.push({
           name: 'OpenRouter Gemini Vision (google/gemini-2.5-flash @ openrouter.ai)',
@@ -3133,7 +3144,46 @@ app.post('/api/chat', async (req: Request, res: Response) => {
       }
     } else if (isFathomSearch && OPENROUTER_API_KEY) {
       gateCandidates.push({
-        name: 'OpenRouter Fathom Search Engine (meta/muse-spark-1.3 + web_plugin)',
+        name: 'OpenRouter Fathom Search Engine (meta/muse-spark-1.3-contributor + web_plugin)',
+        url: `${OPENROUTER_BASE_URL}/chat/completions`,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'https://matany.one',
+          'X-Title': 'Matany AI',
+        },
+        payload: {
+          ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning),
+          plugins: [{ id: 'web', max_results: 5 }]
+        }
+      });
+      gateCandidates.push({
+        name: 'OpenRouter Fathom Search Engine :online (meta/muse-spark-1.3-contributor:online)',
+        url: `${OPENROUTER_BASE_URL}/chat/completions`,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'https://matany.one',
+          'X-Title': 'Matany AI',
+        },
+        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor:online', basePayload, dynamicTuning)
+      });
+      gateCandidates.push({
+        name: 'OpenRouter Fathom Search Engine Contributor Backup (meta/muse-spark-1.2-contributor + web_plugin)',
+        url: `${OPENROUTER_BASE_URL}/chat/completions`,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'https://matany.one',
+          'X-Title': 'Matany AI',
+        },
+        payload: {
+          ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning),
+          plugins: [{ id: 'web', max_results: 5 }]
+        }
+      });
+      gateCandidates.push({
+        name: 'OpenRouter Fathom Search Engine Fallback (meta/muse-spark-1.3 + web_plugin)',
         url: `${OPENROUTER_BASE_URL}/chat/completions`,
         headers: {
           'Content-Type': 'application/json',
@@ -3146,34 +3196,31 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           plugins: [{ id: 'web', max_results: 5 }]
         }
       });
-      gateCandidates.push({
-        name: 'OpenRouter Fathom Search Engine :online (meta/muse-spark-1.3:online)',
-        url: `${OPENROUTER_BASE_URL}/chat/completions`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://matany.one',
-          'X-Title': 'Matany AI',
-        },
-        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3:online', basePayload, dynamicTuning)
-      });
-      gateCandidates.push({
-        name: 'OpenRouter Fathom Search Engine Backup (meta/muse-spark-1.2 + web_plugin)',
-        url: `${OPENROUTER_BASE_URL}/chat/completions`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://matany.one',
-          'X-Title': 'Matany AI',
-        },
-        payload: {
-          ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2', basePayload, dynamicTuning),
-          plugins: [{ id: 'web', max_results: 5 }]
-        }
-      });
     } else if (isMediaSpark && OPENROUTER_API_KEY) {
       gateCandidates.push({
-        name: 'OpenRouter Meta Muse Spark 1.3 (Fathom Spark Multimodal)',
+        name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Fathom Spark Multimodal)',
+        url: `${OPENROUTER_BASE_URL}/chat/completions`,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'https://matany.one',
+          'X-Title': 'Matany AI',
+        },
+        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
+      });
+      gateCandidates.push({
+        name: 'OpenRouter Meta Muse Spark 1.2 Contributor Multimodal (Backup)',
+        url: `${OPENROUTER_BASE_URL}/chat/completions`,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'https://matany.one',
+          'X-Title': 'Matany AI',
+        },
+        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning)
+      });
+      gateCandidates.push({
+        name: 'OpenRouter Meta Muse Spark 1.3 Fallback',
         url: `${OPENROUTER_BASE_URL}/chat/completions`,
         headers: {
           'Content-Type': 'application/json',
@@ -3183,21 +3230,32 @@ app.post('/api/chat', async (req: Request, res: Response) => {
         },
         payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
       });
-      gateCandidates.push({
-        name: 'OpenRouter Meta Muse Spark 1.2 Multimodal (Backup)',
-        url: `${OPENROUTER_BASE_URL}/chat/completions`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://matany.one',
-          'X-Title': 'Matany AI',
-        },
-        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2', basePayload, dynamicTuning)
-      });
     } else if (isCyber26 || isCyber) {
       if (OPENROUTER_API_KEY) {
         gateCandidates.push({
-          name: 'OpenRouter Meta Muse Spark 1.3 (Primary Sovereign Fathom Engine)',
+          name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Primary Sovereign Fathom Engine)',
+          url: `${OPENROUTER_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
+        });
+        gateCandidates.push({
+          name: 'OpenRouter Meta Muse Spark 1.2 Contributor (Backup Sovereign Engine)',
+          url: `${OPENROUTER_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning)
+        });
+        gateCandidates.push({
+          name: 'OpenRouter Meta Muse Spark 1.3 Fallback',
           url: `${OPENROUTER_BASE_URL}/chat/completions`,
           headers: {
             'Content-Type': 'application/json',
@@ -3206,23 +3264,12 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             'X-Title': 'Matany AI',
           },
           payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
-        });
-        gateCandidates.push({
-          name: 'OpenRouter Meta Muse Spark 1.2 (Backup Sovereign Engine)',
-          url: `${OPENROUTER_BASE_URL}/chat/completions`,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'HTTP-Referer': 'https://matany.one',
-            'X-Title': 'Matany AI',
-          },
-          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2', basePayload, dynamicTuning)
         });
       }
     } else if (isEffectiveMatanyMode) {
       if (OPENROUTER_API_KEY) {
         gateCandidates.push({
-          name: 'OpenRouter Meta Muse Spark 1.3 (Matany Persona Mode)',
+          name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Matany Persona Mode)',
           url: `${OPENROUTER_BASE_URL}/chat/completions`,
           headers: {
             'Content-Type': 'application/json',
@@ -3230,7 +3277,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             'HTTP-Referer': 'https://matany.one',
             'X-Title': 'Matany AI',
           },
-          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
         });
         gateCandidates.push({
           name: 'OpenRouter Magnum v4 72B (Matany Persona Backup)',
@@ -3243,12 +3290,8 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           },
           payload: DynamicParameterTuner.tuneGatewayPayload('anthracite-org/magnum-v4-72b', basePayload, dynamicTuning)
         });
-      }
-    } else {
-      // General Text Chat Mode (Quant 3 Flagship Default - Primary: OpenRouter meta/muse-spark-1.3)
-      if (OPENROUTER_API_KEY) {
         gateCandidates.push({
-          name: 'OpenRouter Meta Muse Spark 1.3 (Quant 3 Flagship Primary)',
+          name: 'OpenRouter Meta Muse Spark 1.3 Fallback',
           url: `${OPENROUTER_BASE_URL}/chat/completions`,
           headers: {
             'Content-Type': 'application/json',
@@ -3258,8 +3301,12 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           },
           payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
         });
+      }
+    } else {
+      // General Text Chat Mode (Quant 3 Flagship Default - Primary: OpenRouter meta/muse-spark-1.3-contributor)
+      if (OPENROUTER_API_KEY) {
         gateCandidates.push({
-          name: 'OpenRouter Meta Muse Spark 1.2 (Quant 3 Flagship Backup)',
+          name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Quant 3 Flagship Primary)',
           url: `${OPENROUTER_BASE_URL}/chat/completions`,
           headers: {
             'Content-Type': 'application/json',
@@ -3267,7 +3314,29 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             'HTTP-Referer': 'https://matany.one',
             'X-Title': 'Matany AI',
           },
-          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2', basePayload, dynamicTuning)
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
+        });
+        gateCandidates.push({
+          name: 'OpenRouter Meta Muse Spark 1.2 Contributor (Quant 3 Flagship Backup)',
+          url: `${OPENROUTER_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning)
+        });
+        gateCandidates.push({
+          name: 'OpenRouter Meta Muse Spark 1.3 Fallback',
+          url: `${OPENROUTER_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
         });
       }
     }

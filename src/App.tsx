@@ -165,7 +165,10 @@ const MainAppContent: React.FC = () => {
   const [preferredBaseModel, setPreferredBaseModel] = useState<ModelType>(() => {
     try {
       const saved = localStorage.getItem('matany_preferred_base_model');
-      if (saved === 'fathom-quant-3' || saved === 'fathom-cyber-ultra-2.6' || saved === 'fathom-search' || saved === 'meta/muse-spark-1.3' || saved === 'meta/muse-spark-1.3-contributor') {
+      if (saved === 'meta/muse-spark-1.3' || saved === 'meta/muse-spark-1.3-contributor') {
+        return 'meta/muse-spark-1.3-contributor';
+      }
+      if (saved === 'fathom-quant-3' || saved === 'fathom-cyber-ultra-2.6' || saved === 'fathom-search') {
         return saved as ModelType;
       }
     } catch (e) {}
@@ -175,11 +178,12 @@ const MainAppContent: React.FC = () => {
   const [activeModel, setActiveModel] = useState<ModelType>(preferredBaseModel);
 
   const handleSelectModel = (model: ModelType) => {
-    setActiveModel(model);
-    if (model === 'fathom-quant-3' || model === 'fathom-cyber-ultra-2.6' || model === 'fathom-search' || model === 'meta/muse-spark-1.3' || model === 'meta/muse-spark-1.3-contributor') {
-      setPreferredBaseModel(model);
+    const effectiveModel = model === 'meta/muse-spark-1.3' ? 'meta/muse-spark-1.3-contributor' : model;
+    setActiveModel(effectiveModel);
+    if (effectiveModel === 'fathom-quant-3' || effectiveModel === 'fathom-cyber-ultra-2.6' || effectiveModel === 'fathom-search' || effectiveModel === 'meta/muse-spark-1.3-contributor') {
+      setPreferredBaseModel(effectiveModel);
       try {
-        localStorage.setItem('matany_preferred_base_model', model);
+        localStorage.setItem('matany_preferred_base_model', effectiveModel);
       } catch (e) {}
     }
   };

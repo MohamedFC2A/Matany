@@ -1086,8 +1086,8 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                     <button
                       type="button"
                       onClick={() => {
-                        setInternalModel('meta/muse-spark-1.3');
-                        onSelectModel?.('meta/muse-spark-1.3');
+                        setInternalModel('meta/muse-spark-1.3-contributor');
+                        onSelectModel?.('meta/muse-spark-1.3-contributor');
                         if (isDeepSearchEffective) toggleDeepSearch();
                         setIsModelMenuOpen(false);
                       }}

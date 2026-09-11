@@ -290,7 +290,7 @@ export async function performVideoVisionPerception(
     return null;
   }
 
-  console.log(`[VideoVisionEngine] 👁️ Running meta/muse-spark-1.3 for ${platform} (${videoId}, ${resolvedKeyframes.length} frames)...`);
+  console.log(`[VideoVisionEngine] 👁️ Running meta/muse-spark-1.3-contributor for ${platform} (${videoId}, ${resolvedKeyframes.length} frames)...`);
 
   const visionPrompt = `[نظام الإدراك البصري الفائق والذاكرة الزمنية وتحليل التفاصيل غير المنطوقة - FATHOM ULTRA TEMPORAL VIDEO VISION]:
 تم استخراج عدد (${resolvedKeyframes.length}) إطارات بصرية حقيقية ملتقطة من المسار الزمني لفيديو ${platformAr}:
@@ -337,7 +337,7 @@ export async function performVideoVisionPerception(
     {
       url: `${baseUrl}/chat/completions`,
       key: openRouterKey,
-      model: 'meta/muse-spark-1.3',
+      model: 'meta/muse-spark-1.3-contributor',
       headers: {
         'HTTP-Referer': 'https://matany.one',
         'X-Title': 'Matany AI',
@@ -346,7 +346,16 @@ export async function performVideoVisionPerception(
     {
       url: `${baseUrl}/chat/completions`,
       key: openRouterKey,
-      model: 'meta/muse-spark-1.2',
+      model: 'meta/muse-spark-1.2-contributor',
+      headers: {
+        'HTTP-Referer': 'https://matany.one',
+        'X-Title': 'Matany AI',
+      }
+    },
+    {
+      url: `${baseUrl}/chat/completions`,
+      key: openRouterKey,
+      model: 'meta/muse-spark-1.3',
       headers: {
         'HTTP-Referer': 'https://matany.one',
         'X-Title': 'Matany AI',
@@ -365,7 +374,7 @@ export async function performVideoVisionPerception(
 
   const dynamicTuning = DynamicParameterTuner.tune({
     userPrompt: contextInfo.userPrompt || contextInfo.title || 'استيعاب وفحص لقطات الفيديو',
-    requestedModel: 'meta/muse-spark-1.3',
+    requestedModel: 'meta/muse-spark-1.3-contributor',
     hasVideoOrAudio: true,
   });
 
@@ -389,7 +398,7 @@ export async function performVideoVisionPerception(
           'Authorization': `Bearer ${gw.key}`,
           ...gw.headers
         },
-        body: JSON.stringify(gatewayPayload),
+        body: JSON.stringify(DynamicParameterTuner.sanitizeForGateway(gw.url, gatewayPayload)),
         signal: visionController.signal
       });
       clearTimeout(visionTimeout);
@@ -590,7 +599,7 @@ export async function performPostImageVisionPerception(
     return null;
   }
 
-  console.log(`[FathomCamVision] 👁️ Running meta/muse-spark-1.3 on ${resolvedImages.length} images for ${platform} (${postId})...`);
+  console.log(`[FathomCamVision] 👁️ Running meta/muse-spark-1.3-contributor on ${resolvedImages.length} images for ${platform} (${postId})...`);
 
   const visionPrompt = `[نظام الإدراك البصري الفائق وقراءة الجداول والمستندات والصور — FATHOM CAM VISION ENGINE]:
 تم رصد واستخراج عدد (${resolvedImages.length}) صور ومرفقات بصرية من منشور ${platformAr}:
@@ -634,7 +643,7 @@ export async function performPostImageVisionPerception(
     {
       url: `${baseUrl}/chat/completions`,
       key: openRouterKey,
-      model: 'meta/muse-spark-1.3',
+      model: 'meta/muse-spark-1.3-contributor',
       headers: {
         'HTTP-Referer': 'https://matany.one',
         'X-Title': 'Matany AI',
@@ -643,7 +652,16 @@ export async function performPostImageVisionPerception(
     {
       url: `${baseUrl}/chat/completions`,
       key: openRouterKey,
-      model: 'meta/muse-spark-1.2',
+      model: 'meta/muse-spark-1.2-contributor',
+      headers: {
+        'HTTP-Referer': 'https://matany.one',
+        'X-Title': 'Matany AI',
+      }
+    },
+    {
+      url: `${baseUrl}/chat/completions`,
+      key: openRouterKey,
+      model: 'meta/muse-spark-1.3',
       headers: {
         'HTTP-Referer': 'https://matany.one',
         'X-Title': 'Matany AI',
@@ -662,7 +680,7 @@ export async function performPostImageVisionPerception(
 
   const dynamicTuning = DynamicParameterTuner.tune({
     userPrompt: contextInfo.userPrompt || contextInfo.caption || contextInfo.title || 'فحص وتحليل الصور المرفقة بدقة بصرية متناهية',
-    requestedModel: 'meta/muse-spark-1.3',
+    requestedModel: 'meta/muse-spark-1.3-contributor',
     hasMultimodalImages: true,
   });
 
@@ -686,7 +704,7 @@ export async function performPostImageVisionPerception(
           'Authorization': `Bearer ${gw.key}`,
           ...gw.headers
         },
-        body: JSON.stringify(gatewayPayload),
+        body: JSON.stringify(DynamicParameterTuner.sanitizeForGateway(gw.url, gatewayPayload)),
         signal: visionController.signal
       });
       clearTimeout(visionTimeout);
