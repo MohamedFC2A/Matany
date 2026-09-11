@@ -11,6 +11,14 @@
       "destination": "/api/telemetry-incident"
     },
     {
+      "source": "/api/elevenlabs/:action*",
+      "destination": "/api/elevenlabs"
+    },
+    {
+      "source": "/api/fathom-its/chat",
+      "destination": "/api/fathom-its-chat"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/:path*"
     },

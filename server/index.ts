@@ -3176,94 +3176,140 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           payload: DynamicParameterTuner.tuneGatewayPayload('google/gemini-2.5-flash', basePayload, dynamicTuning)
         });
       }
-    } else if (isFathomSearch && OPENROUTER_API_KEY) {
-      gateCandidates.push({
-        name: 'OpenRouter Fathom Search Engine (meta/muse-spark-1.3-contributor + web_plugin)',
-        url: `${OPENROUTER_BASE_URL}/chat/completions`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://matany.one',
-          'X-Title': 'Matany AI',
-        },
-        payload: {
-          ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning),
-          plugins: [{ id: 'web', max_results: 5 }]
-        }
-      });
-      gateCandidates.push({
-        name: 'OpenRouter Fathom Search Engine :online (meta/muse-spark-1.3-contributor:online)',
-        url: `${OPENROUTER_BASE_URL}/chat/completions`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://matany.one',
-          'X-Title': 'Matany AI',
-        },
-        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor:online', basePayload, dynamicTuning)
-      });
-      gateCandidates.push({
-        name: 'OpenRouter Fathom Search Engine Contributor Backup (meta/muse-spark-1.2-contributor + web_plugin)',
-        url: `${OPENROUTER_BASE_URL}/chat/completions`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://matany.one',
-          'X-Title': 'Matany AI',
-        },
-        payload: {
-          ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning),
-          plugins: [{ id: 'web', max_results: 5 }]
-        }
-      });
-      gateCandidates.push({
-        name: 'OpenRouter Fathom Search Engine Fallback (meta/muse-spark-1.3 + web_plugin)',
-        url: `${OPENROUTER_BASE_URL}/chat/completions`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://matany.one',
-          'X-Title': 'Matany AI',
-        },
-        payload: {
-          ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning),
-          plugins: [{ id: 'web', max_results: 5 }]
-        }
-      });
-    } else if (isMediaSpark && OPENROUTER_API_KEY) {
-      gateCandidates.push({
-        name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Fathom Spark Multimodal)',
-        url: `${OPENROUTER_BASE_URL}/chat/completions`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://matany.one',
-          'X-Title': 'Matany AI',
-        },
-        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
-      });
-      gateCandidates.push({
-        name: 'OpenRouter Meta Muse Spark 1.2 Contributor Multimodal (Backup)',
-        url: `${OPENROUTER_BASE_URL}/chat/completions`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://matany.one',
-          'X-Title': 'Matany AI',
-        },
-        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning)
-      });
-      gateCandidates.push({
-        name: 'OpenRouter Meta Muse Spark 1.3 Fallback',
-        url: `${OPENROUTER_BASE_URL}/chat/completions`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': 'https://matany.one',
-          'X-Title': 'Matany AI',
-        },
-        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
-      });
+      if (DEEPSEEK_API_KEY) {
+        gateCandidates.push({
+          name: 'DeepSeek Chat Text & Multimodal Fallback (deepseek-chat @ api.deepseek.com)',
+          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-chat', basePayload, dynamicTuning)
+        });
+      }
+    } else if (isFathomSearch) {
+      if (OPENROUTER_API_KEY) {
+        gateCandidates.push({
+          name: 'OpenRouter Fathom Search Engine (meta/muse-spark-1.3-contributor + web_plugin)',
+          url: `${OPENROUTER_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          payload: {
+            ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning),
+            plugins: [{ id: 'web', max_results: 5 }]
+          }
+        });
+        gateCandidates.push({
+          name: 'OpenRouter Fathom Search Engine :online (meta/muse-spark-1.3-contributor:online)',
+          url: `${OPENROUTER_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor:online', basePayload, dynamicTuning)
+        });
+        gateCandidates.push({
+          name: 'OpenRouter Fathom Search Engine Contributor Backup (meta/muse-spark-1.2-contributor + web_plugin)',
+          url: `${OPENROUTER_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          payload: {
+            ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning),
+            plugins: [{ id: 'web', max_results: 5 }]
+          }
+        });
+        gateCandidates.push({
+          name: 'OpenRouter Fathom Search Engine Fallback (meta/muse-spark-1.3 + web_plugin)',
+          url: `${OPENROUTER_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          payload: {
+            ...DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning),
+            plugins: [{ id: 'web', max_results: 5 }]
+          }
+        });
+      }
+      if (DEEPSEEK_API_KEY) {
+        gateCandidates.push({
+          name: 'DeepSeek Reasoner Grounded Search Core (deepseek-reasoner @ api.deepseek.com)',
+          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-reasoner', basePayload, dynamicTuning)
+        });
+        gateCandidates.push({
+          name: 'DeepSeek Chat Grounded Search Core (deepseek-chat @ api.deepseek.com)',
+          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-chat', basePayload, dynamicTuning)
+        });
+      }
+    } else if (isMediaSpark) {
+      if (OPENROUTER_API_KEY) {
+        gateCandidates.push({
+          name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Fathom Spark Multimodal)',
+          url: `${OPENROUTER_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3-contributor', basePayload, dynamicTuning)
+        });
+        gateCandidates.push({
+          name: 'OpenRouter Meta Muse Spark 1.2 Contributor Multimodal (Backup)',
+          url: `${OPENROUTER_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', basePayload, dynamicTuning)
+        });
+        gateCandidates.push({
+          name: 'OpenRouter Meta Muse Spark 1.3 Fallback',
+          url: `${OPENROUTER_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': 'https://matany.one',
+            'X-Title': 'Matany AI',
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
+        });
+      }
+      if (DEEPSEEK_API_KEY) {
+        gateCandidates.push({
+          name: 'DeepSeek Chat Multimodal Text Synthesizer (deepseek-chat @ api.deepseek.com)',
+          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-chat', basePayload, dynamicTuning)
+        });
+      }
     } else if (isCyber26 || isCyber) {
       if (OPENROUTER_API_KEY) {
         gateCandidates.push({
@@ -3298,6 +3344,26 @@ app.post('/api/chat', async (req: Request, res: Response) => {
             'X-Title': 'Matany AI',
           },
           payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
+        });
+      }
+      if (DEEPSEEK_API_KEY) {
+        gateCandidates.push({
+          name: 'DeepSeek Reasoner Sovereign Cyber Core (deepseek-reasoner @ api.deepseek.com)',
+          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-reasoner', basePayload, dynamicTuning)
+        });
+        gateCandidates.push({
+          name: 'DeepSeek Chat Sovereign Cyber Backup (deepseek-chat @ api.deepseek.com)',
+          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-chat', basePayload, dynamicTuning)
         });
       }
     } else if (isEffectiveMatanyMode) {
@@ -3336,8 +3402,19 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
         });
       }
+      if (DEEPSEEK_API_KEY) {
+        gateCandidates.push({
+          name: 'DeepSeek Chat Sovereign Persona Engine (deepseek-chat @ api.deepseek.com)',
+          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-chat', basePayload, dynamicTuning)
+        });
+      }
     } else {
-      // General Text Chat Mode (Quant 3 Flagship Default - Primary: OpenRouter meta/muse-spark-1.3-contributor)
+      // General Text Chat Mode (Quant 3 Flagship Default - Primary: OpenRouter meta/muse-spark-1.3-contributor, Sovereign Core: DeepSeek)
       if (OPENROUTER_API_KEY) {
         gateCandidates.push({
           name: 'OpenRouter Meta Muse Spark 1.3 Contributor (Quant 3 Flagship Primary)',
@@ -3373,13 +3450,38 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', basePayload, dynamicTuning)
         });
       }
+      if (DEEPSEEK_API_KEY) {
+        gateCandidates.push({
+          name: 'DeepSeek Reasoner Flagship Cognitive Core (deepseek-reasoner @ api.deepseek.com)',
+          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-reasoner', basePayload, dynamicTuning)
+        });
+        gateCandidates.push({
+          name: 'DeepSeek Chat Flagship Conversational Core (deepseek-chat @ api.deepseek.com)',
+          url: `${DEEPSEEK_BASE_URL}/chat/completions`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          },
+          payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-chat', basePayload, dynamicTuning)
+        });
+      }
     }
 
     let response: any = null;
     let lastError: string = '';
+    let openrouterExhausted = false;
 
     for (const candidate of gateCandidates) {
       if (upstreamAbortController.signal.aborted || isClientDisconnected) break;
+      if (candidate.url.includes('openrouter.ai') && openrouterExhausted) {
+        console.log(`[MATANY-SERVER] Fast-skipping ${candidate.name} (OpenRouter limit exhausted).`);
+        continue;
+      }
       try {
         console.log(`[MATANY-SERVER] Attempting gateway: ${candidate.name}...`);
         const resCandidate = await executeFetchWithRetry(candidate.url, {
@@ -3397,6 +3499,10 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           const errTxt = await resCandidate.text().catch(() => '');
           lastError = `${candidate.name} error (${resCandidate.status}): ${errTxt.slice(0, 150)}`;
           console.warn(`[MATANY-SERVER] ✗ ${lastError}`);
+          if (candidate.url.includes('openrouter.ai') && (resCandidate.status === 402 || resCandidate.status === 403 || errTxt.includes('Key limit exceeded') || errTxt.includes('credit limit') || errTxt.includes('account settings'))) {
+            openrouterExhausted = true;
+            console.warn('[MATANY-SERVER] ⚠️ OpenRouter unavailable/limit reached. Fast-failing remaining OpenRouter gateways to switch to DeepSeek immediately.');
+          }
         }
       } catch (gateErr: any) {
         if (gateErr.name === 'AbortError' || upstreamAbortController.signal.aborted) break;

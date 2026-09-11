@@ -133,8 +133,13 @@ You MUST output your response strictly as a valid JSON object with the following
       { model: 'deepseek-chat', url: DEEPSEEK_BASE_URL, key: DEEPSEEK_API_KEY }
     ];
 
+    let openrouterExhausted = false;
+
     for (const target of modelsToTry) {
       if (!target.key) continue;
+      if (target.url.includes('openrouter.ai') && openrouterExhausted) {
+        continue;
+      }
 
       try {
         const response = await fetch(`${target.url}/chat/completions`, {
@@ -154,7 +159,11 @@ You MUST output your response strictly as a valid JSON object with the following
         });
 
         if (!response.ok) {
-          console.warn(`[Fathom ITS Engine] Model ${target.model} returned HTTP ${response.status}`);
+          const errText = await response.text().catch(() => '');
+          console.warn(`[Fathom ITS Engine] Model ${target.model} returned HTTP ${response.status}: ${errText.slice(0, 150)}`);
+          if (target.url.includes('openrouter.ai') && (response.status === 402 || response.status === 403 || errText.includes('Key limit exceeded'))) {
+            openrouterExhausted = true;
+          }
           continue;
         }
 

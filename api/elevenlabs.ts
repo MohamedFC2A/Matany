@@ -158,14 +158,23 @@ export function handleElevenLabsVoices(_req: Request, res: Response) {
 
 // Vercel Serverless / Edge Export
 export default async function handler(req: any, res: any) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-request-id, xi-api-key');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   const method = req.method;
   const action = req.query?.action || (req.body && req.body.action);
+  const url = req.url || '';
 
-  if (method === 'GET' || action === 'voices') {
+  if (method === 'GET' || action === 'voices' || url.includes('voices')) {
     return handleElevenLabsVoices(req, res);
   }
 
-  if (method === 'POST') {
+  if (method === 'POST' || url.includes('tts') || url.includes('preview')) {
     return handleElevenLabsTTS(req, res);
   }
 
