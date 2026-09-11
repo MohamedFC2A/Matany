@@ -103,6 +103,27 @@ export interface MSQQuizItem {
   isAnswered?: boolean;
 }
 
+export interface MSQExamQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+  category?: string;
+  points?: number;
+}
+
+export interface MSQExamSuite {
+  id: string;
+  title: string;
+  description?: string;
+  level: CEFRLevel | string;
+  durationMinutes: number;
+  passingScore?: number;
+  questions: MSQExamQuestion[];
+  totalPoints?: number;
+}
+
 export interface CorrectionCard {
   originalText: string;
   improvedText: string;

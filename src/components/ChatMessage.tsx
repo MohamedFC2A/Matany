@@ -25,6 +25,7 @@ import { SvgStudioCard } from './ui/SvgStudioCard';
 import { NeuralImageCard, isValidImageUri, type NeuralImageData } from './ui/NeuralImageCard';
 import { VpsControlRoomCard } from './ui/VpsControlRoomCard';
 import { MsqQuizCard } from './ui/MsqQuizCard';
+import { MsqExamCard } from './ui/MsqExamCard';
 import { ActiveCorrectionCard } from './ui/ActiveCorrectionCard';
 import { ItsProgressBadge } from './ui/ItsProgressBadge';
 import { FathomITSSoundManager } from './FathomITS/FathomITSSoundManager';
@@ -1534,6 +1535,37 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
     return null;
   }, [displayContent, message.id]);
 
+  // Stable first-class MSQ Exam Suite extraction
+  const extractedMsqExamData = useMemo(() => {
+    if (!displayContent) return null;
+    const match = /```(?:msq-exam|exam|its-exam)\s*(\{[\s\S]*?\})\s*```/i.exec(displayContent);
+    if (!match) return null;
+    try {
+      const parsed = JSON.parse(match[1]);
+      if (parsed && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+        return {
+          id: parsed.id || `exam-${message.id || Date.now()}`,
+          title: parsed.title || 'Comprehensive Academic Assessment',
+          description: parsed.description,
+          level: parsed.level || 'B2',
+          durationMinutes: typeof parsed.durationMinutes === 'number' ? parsed.durationMinutes : 10,
+          passingScore: typeof parsed.passingScore === 'number' ? parsed.passingScore : 70,
+          totalPoints: typeof parsed.totalPoints === 'number' ? parsed.totalPoints : (parsed.questions.length * 5),
+          questions: parsed.questions.map((q: any, idx: number) => ({
+            id: q.id || `q-${idx + 1}`,
+            question: q.question,
+            options: Array.isArray(q.options) ? q.options : [],
+            correctIndex: typeof q.correctIndex === 'number' ? q.correctIndex : 0,
+            explanation: q.explanation || '',
+            category: q.category || 'Language Assessment',
+            points: typeof q.points === 'number' ? q.points : 5
+          }))
+        };
+      }
+    } catch {}
+    return null;
+  }, [displayContent, message.id]);
+
   // Stable first-class Active Correction extraction
   const extractedCorrectionData = useMemo(() => {
     if (!displayContent) return null;
@@ -1581,6 +1613,8 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
     return displayContentWithoutSvg
       .replace(/```(?:neural-image|neural_image|image-studio|image_studio)\s*\{[\s\S]*?\}\s*```/gi, '')
       .replace(/```(?:neural-image|neural_image|image-studio|image_studio)\s*\{[\s\S]*$/gi, '') // during streaming
+      .replace(/```(?:msq-exam|exam|its-exam)\s*\{[\s\S]*?\}\s*```/gi, '')
+      .replace(/```(?:msq-exam|exam|its-exam)\s*\{[\s\S]*$/gi, '')
       .replace(/```(?:msq|its-msq|quiz)\s*\{[\s\S]*?\}\s*```/gi, '')
       .replace(/```(?:msq|its-msq|quiz)\s*\{[\s\S]*$/gi, '')
       .replace(/```(?:correction|its-correction)\s*\{[\s\S]*?\}\s*```/gi, '')
@@ -1598,6 +1632,14 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const isAiDetectIntent = activeFeatures.some(f => f.id === 'ai_detect');
   const isTimeIntent = activeFeatures.some(f => f.id === 'time_detect');
   const hasDownloadDetect = activeFeatures.some(f => f.id === 'download_detect');
+
+  // Fathom ITS Exam Intent Detection
+  const isExamIntent = useMemo(() => {
+    const pLower = (previousUserPrompt || '').toLowerCase();
+    const hasExamKeyword = /(?:امتحان|اختبار|كويز|تحدي|exam|quiz|test|msq|تقييم)/i.test(pLower);
+    const hasExamInContent = /(?:```(?:msq-exam|exam|its-exam)|"questions"\s*:|"durationMinutes"\s*:)/i.test(displayContent || '');
+    return hasExamKeyword || hasExamInContent || Boolean(extractedMsqExamData);
+  }, [previousUserPrompt, displayContent, extractedMsqExamData]);
 
   // Fathom Quant 3 Exclusive Neural Image Studio Activity Check (Active by default for flagship Quant 3)
   const isQuant3Model = message.model === 'fathom-quant-3' || (typeof message.model === 'string' && message.model.includes('quant-3')) || !message.model;
@@ -2039,6 +2081,19 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
           </div>
         )}
 
+        {/* 4. Fathom ITS Exam Suite Live Generation Notice */}
+        {isExamIntent && (isThinking || isStreaming) && !extractedMsqExamData && (
+          <div className="flex items-center gap-2.5 py-2 px-3.5 mb-3 rounded-xl bg-purple-950/40 border border-purple-500/30 text-purple-200 select-none w-fit shadow-inner animate-in fade-in" dir="rtl">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-purple-500"></span>
+            </span>
+            <span className="text-xs sm:text-sm font-sans font-bold text-purple-200">
+              جارٍ إنشاء وتجهيز الامتحان الأكاديمي الشامل وضبط الأسئلة والتوقيت...
+            </span>
+          </div>
+        )}
+
         {isStreaming && !message.content && !hasReasoning && !isThinking && !isSvgStudioActive && !isNeuralImageStudioActive ? (
           <div className="flex items-center gap-2 py-1.5 select-none w-full max-w-full" dir="rtl">
             <div className="inline-flex min-h-8 py-1.5 px-3 max-w-full items-center gap-2.5 rounded-2xl time-detect-glass flex-wrap">
@@ -2143,6 +2198,8 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                       : "جارٍ توليد الصورة بدقة فائقة..."
                 ) : isSvgStudioActive ? (
                   "جارٍ رسم وتوليد متجهات الرسم الشعاعي (SVG)..."
+                ) : isExamIntent ? (
+                  "جارٍ إنشاء وتجهيز الامتحان الأكاديمي الشامل وضبط الأسئلة والتوقيت..."
                 ) : (
                   "جارٍ صياغة الرد والاستدلال..."
                 )}
@@ -2238,8 +2295,19 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               </div>
             )}
 
+            {/* Stable first-class Fathom ITS MSQ Exam Suite Card */}
+            {extractedMsqExamData && (
+              <div className="w-full my-3">
+                <MsqExamCard
+                  key={`its-exam-${message.id || 'current'}`}
+                  exam={extractedMsqExamData}
+                  isStreaming={isStreaming}
+                />
+              </div>
+            )}
+
             {/* Stable first-class Fathom ITS MSQ Quiz Card */}
-            {extractedMsqData && (
+            {extractedMsqData && !extractedMsqExamData && (
               <div className="w-full my-3">
                 <MsqQuizCard
                   key={`its-msq-${message.id || 'current'}`}
