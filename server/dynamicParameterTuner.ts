@@ -1603,7 +1603,7 @@ export class DynamicParameterTuner {
         }
       }
     } else {
-      // Non-DeepSeek Models (e.g., Fathom Search, Muse Spark, Magnum)
+      // Non-DeepSeek Models (e.g., Fathom Search, Muse Spark, Magnum @ OpenRouter)
       payload.temperature = candidateParams.temperature;
       payload.top_p = candidateParams.top_p;
       if (candidateParams.frequency_penalty > 0) {
@@ -1612,6 +1612,30 @@ export class DynamicParameterTuner {
       if (candidateParams.presence_penalty > 0) {
         payload.presence_penalty = candidateParams.presence_penalty;
       }
+
+      // OpenRouter Stream Usage Telemetry
+      if (payload.stream !== false) {
+        payload.stream_options = { include_usage: true };
+      }
+
+      // OpenRouter Official Context Compression Algorithm (prevents 400 context length errors)
+      payload.transforms = ['middle-out'];
+
+      // OpenRouter Smart Fallback Model Routing (server-side instant edge failover)
+      payload.models = this.getOpenRouterFallbackModels(candidateModel);
+      payload.route = 'fallback';
+
+      // OpenRouter Advanced Provider Routing Algorithm
+      const isThroughputTask =
+        tuningResult.complexityLevel === 'EXHAUSTIVE_ARCHITECTURAL' ||
+        tuningResult.detectedIntent === 'CYBERSECURITY_AND_EXPLOIT_AUDITING';
+
+      payload.provider = {
+        sort: isThroughputTask ? 'throughput' : 'latency',
+        allow_fallbacks: true,
+        require_parameters: true,
+        data_collection: 'deny'
+      };
 
       const thinkingMode = candidateParams.thinking_mode || 'enabled';
       const reasoningEffort = candidateParams.reasoning_effort || 'high';
@@ -1642,7 +1666,7 @@ export class DynamicParameterTuner {
         };
       }
 
-      // Fathom Search Web Search integration via OpenRouter Official Web Plugin & Tools
+      // Fathom Search Web Search integration via OpenRouter Official Web Server Tool
       if (candidateFamily === 'fathom-search' || candidateModel.includes('search') || candidateModel.includes(':online') || candidateModel.includes('qwen')) {
         payload.plugins = [
           {
@@ -1744,22 +1768,122 @@ export class DynamicParameterTuner {
   }
 
   /**
-   * Sanitizes payload right before sending over HTTP to a specific gateway.
-   * For OpenRouter (openrouter.ai), enforces that only ONE of "reasoning.effort"
-   * and "reasoning.max_tokens" is specified to prevent 400 Bad Request.
+   * OpenRouter Model Fallback Routing Chains
+   * Per https://openrouter.ai/docs, providing the 'models' array with route: 'fallback'
+   * allows OpenRouter to immediately fail over at the edge to subsequent models if the primary
+   * model experiences outages, 429 rate-limiting, or context overflow.
+   */
+  public static getOpenRouterFallbackModels(primaryModel: string): string[] {
+    const cleanModel = (primaryModel || '').replace(/:online$/i, '').trim();
+
+    if (cleanModel.includes('muse-spark-1.3')) {
+      return [
+        cleanModel,
+        'anthracite-org/magnum-v4-72b',
+        'meta/muse-spark-1.2-contributor',
+        'google/gemini-2.5-flash'
+      ];
+    }
+    if (cleanModel.includes('muse-spark-1.2')) {
+      return [
+        cleanModel,
+        'meta/muse-spark-1.3-contributor',
+        'anthracite-org/magnum-v4-72b',
+        'google/gemini-2.5-flash'
+      ];
+    }
+    if (cleanModel.includes('magnum')) {
+      return [
+        cleanModel,
+        'meta/muse-spark-1.3-contributor',
+        'meta/muse-spark-1.2-contributor'
+      ];
+    }
+    if (cleanModel.includes('gemini-2.5-flash') || cleanModel.includes('gemini-2.5-pro')) {
+      return [
+        cleanModel,
+        'meta/muse-spark-1.3-contributor',
+        'anthracite-org/magnum-v4-72b'
+      ];
+    }
+    if (cleanModel.includes('qwen')) {
+      return [
+        cleanModel,
+        'meta/muse-spark-1.3-contributor',
+        'anthracite-org/magnum-v4-72b'
+      ];
+    }
+
+    return [
+      cleanModel || 'meta/muse-spark-1.3-contributor',
+      'anthracite-org/magnum-v4-72b',
+      'meta/muse-spark-1.2-contributor'
+    ];
+  }
+
+  /**
+   * Sanitizes and calibrates payloads right before sending over HTTP to a specific gateway.
+   * Incorporates official OpenRouter state-of-the-art algorithms:
+   * 1. Dynamic Provider Routing: latency vs throughput sorting, failovers, require_parameters, data privacy
+   * 2. Edge Model Fallback Routing: 'models' array & route: 'fallback'
+   * 3. Context Optimization: 'transforms': ['middle-out']
+   * 4. Prompt Caching & Sticky Routing: cache_control ephemeral markers on long system prompts
+   * 5. Parameter Conformance: Stripping conflicting max_tokens from reasoning to eliminate 400 Bad Request
+   * 6. Usage Telemetry: stream_options { include_usage: true }
    */
   public static sanitizeForGateway(url: string, payload: any): any {
     if (!payload || typeof payload !== 'object') return payload;
     const cleanPayload = { ...payload };
 
     if (typeof url === 'string' && url.includes('openrouter.ai')) {
+      // 1. OpenRouter Reasoning & Effort Calibration (Prevents 400 Bad Request)
       if (cleanPayload.reasoning && typeof cleanPayload.reasoning === 'object') {
         cleanPayload.reasoning = { ...cleanPayload.reasoning };
-        // If both effort and max_tokens are present, OpenRouter returns 400.
-        // We keep effort for OpenRouter and strip max_tokens from the reasoning object:
         if (cleanPayload.reasoning.effort && cleanPayload.reasoning.max_tokens) {
           delete cleanPayload.reasoning.max_tokens;
         }
+        if (cleanPayload.reasoning.effort === 'max') {
+          cleanPayload.reasoning.effort = 'high';
+        }
+      }
+
+      // 2. OpenRouter Context Optimization: Middle-out truncation
+      if (!cleanPayload.transforms || !Array.isArray(cleanPayload.transforms)) {
+        cleanPayload.transforms = ['middle-out'];
+      }
+
+      // 3. OpenRouter Model Fallback Routing Chain
+      if (cleanPayload.model && (!cleanPayload.models || !Array.isArray(cleanPayload.models))) {
+        cleanPayload.models = this.getOpenRouterFallbackModels(cleanPayload.model);
+        cleanPayload.route = 'fallback';
+      }
+
+      // 4. OpenRouter Provider Routing Engine
+      if (!cleanPayload.provider) {
+        cleanPayload.provider = {
+          sort: 'latency',
+          allow_fallbacks: true,
+          require_parameters: true,
+          data_collection: 'deny'
+        };
+      }
+
+      // 5. OpenRouter Stream Usage Telemetry
+      if (cleanPayload.stream !== false && !cleanPayload.stream_options) {
+        cleanPayload.stream_options = { include_usage: true };
+      }
+
+      // 6. OpenRouter Prompt Caching & Sticky Routing Support
+      if (Array.isArray(cleanPayload.messages)) {
+        cleanPayload.messages = cleanPayload.messages.map((m: any) => {
+          if (m.role === 'system' && typeof m.content === 'string' && m.content.length > 500 && !m.cache_control) {
+            return {
+              ...m,
+              cache_control: { type: 'ephemeral' }
+            };
+          }
+          return m;
+        });
       }
     }
     return cleanPayload;

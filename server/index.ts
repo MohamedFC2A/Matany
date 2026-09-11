@@ -3766,12 +3766,13 @@ app.post('/api/chat', async (req: Request, res: Response) => {
                   const missTokens = parsed.usage.prompt_cache_miss_tokens || (parsed.usage.prompt_tokens ? Math.max(0, parsed.usage.prompt_tokens - hitTokens) : 0);
                   const totalPromptTokens = parsed.usage.prompt_tokens || (hitTokens + missTokens);
                   const hitRatio = totalPromptTokens > 0 ? ((hitTokens / totalPromptTokens) * 100).toFixed(1) : '0';
-                  console.log(`[DEEPSEEK KV-CACHE TELEMETRY] Prompt: ${totalPromptTokens} tokens | Cache Hit: ${hitTokens} tokens (${hitRatio}%) | Cache Miss: ${missTokens} tokens | Completion: ${parsed.usage.completion_tokens || 0} tokens`);
+                  console.log(`[AI GATEWAY TELEMETRY] Prompt: ${totalPromptTokens} tokens | Cache Hit: ${hitTokens} tokens (${hitRatio}%) | Cache Miss: ${missTokens} tokens | Completion: ${parsed.usage.completion_tokens || 0} tokens`);
                 }
                 const delta = parsed.choices?.[0]?.delta;
-                if (delta?.reasoning_content) {
-                  fullServerReasoning += delta.reasoning_content;
-                  const engineCheck = fathomEngine.processStreamingChunk(delta.reasoning_content);
+                const reasoningChunk = delta?.reasoning_content ?? delta?.reasoning ?? delta?.thought;
+                if (reasoningChunk) {
+                  fullServerReasoning += reasoningChunk;
+                  const engineCheck = fathomEngine.processStreamingChunk(reasoningChunk);
                   if (engineCheck.shouldCutThinking) {
                     isCycleLoopDetected = true;
                     console.warn(`[MATANY-SERVER] ⚠️ Fathom Reasoning Engine cycle detected in thinking: ${engineCheck.reason}. Safe break.`);
@@ -3783,7 +3784,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
                   }
 
                   // Fast 3-repetition break on reasoning words
-                  const cleanChunk = delta.reasoning_content.replace(/[|\-:*#_`>\[\]()]/g, ' ').trim();
+                  const cleanChunk = reasoningChunk.replace(/[|\-:*#_`>\[\]()]/g, ' ').trim();
                   const incomingWords = cleanChunk.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
                   for (const w of incomingWords) {
                     recentReasoningWords.push(w);
