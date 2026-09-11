@@ -17,6 +17,7 @@ import { LimitsPage } from './components/LimitsPage';
 import { ProfilePage } from './components/ProfilePage';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { TermsOfServicePage } from './components/TermsOfServicePage';
+import { FathomITSView } from './components/FathomITS/FathomITSView';
 import { ChatMessageItem, ModelType, WebAuthnVerificationResult, MediaAttachmentItem } from './types';
 import { streamChatCompletion } from './services/api';
 import { incidentDiagnosticService } from './services/incidentDiagnosticService';
@@ -49,7 +50,7 @@ const STORAGE_KEY_21 = 'matany_auth_age_21_biometric';
 const STORAGE_KEY_SEEN_LANDING = 'matany_has_seen_landing';
 const STORAGE_KEY_PLAN = 'matany_active_plan';
 
-export type AppViewMode = 'landing' | 'chat' | 'pricing' | 'limits' | 'profile' | 'privacy' | 'terms';
+export type AppViewMode = 'landing' | 'chat' | 'pricing' | 'limits' | 'profile' | 'privacy' | 'terms' | 'fathom-its';
 
 // Helper to determine if running in a local / development environment
 export const isLocalEnvironment = (): boolean => {
@@ -81,6 +82,7 @@ const MainAppContent: React.FC = () => {
     if (path === '/pricing') return 'pricing';
     if (path === '/limits') return 'limits';
     if (path === '/profile') return 'profile';
+    if (path === '/fathom-its' || path === '/its') return 'fathom-its';
     if (path === '/landing') return 'landing';
     if (path === '/chat') return 'chat';
     if (isLocalEnvironment()) {
@@ -99,6 +101,7 @@ const MainAppContent: React.FC = () => {
       profile: '/profile',
       privacy: '/privacy',
       terms: '/terms',
+      'fathom-its': '/fathom-its',
     };
     const newPath = pathMap[view] || '/';
     if (window.location.pathname !== newPath) {
@@ -114,6 +117,7 @@ const MainAppContent: React.FC = () => {
       else if (path === '/pricing') setViewMode('pricing');
       else if (path === '/limits') setViewMode('limits');
       else if (path === '/profile') setViewMode('profile');
+      else if (path === '/fathom-its' || path === '/its') setViewMode('fathom-its');
       else {
         setViewMode(localStorage.getItem(STORAGE_KEY_SEEN_LANDING) === 'true' ? 'chat' : 'landing');
         const urlParams = new URLSearchParams(window.location.search);
@@ -1326,10 +1330,17 @@ const MainAppContent: React.FC = () => {
             onNavigateToLimits={() => navigateTo('limits')}
             onNavigateToProfile={() => navigateTo('profile')}
             onNavigateToChat={() => navigateTo('chat')}
+            onNavigateToFathomITS={() => navigateTo('fathom-its')}
           />
 
           {/* Dynamic Page Views Container */}
           <div className="flex-1 min-h-0 overflow-hidden relative">
+            {viewMode === 'fathom-its' && (
+              <div className="flex flex-col h-full min-h-0 overflow-y-auto">
+                <FathomITSView onExitToMainChat={() => navigateTo('chat')} />
+              </div>
+            )}
+
             {viewMode === 'pricing' && (
               <PricingPage
                 currentPlanId={currentPlanId}

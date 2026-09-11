@@ -16,6 +16,8 @@ import { DynamicParameterTuner, type DynamicTuningResult } from './dynamicParame
 import { GpaengDiagnosticEngine } from './gpaengDiagnosticEngine';
 import { getVpsTelemetry, executeVpsCommand, controlAutomation, isVpsOrCloudRequest, VPS_STATUS_NOTICE } from './vpsService';
 import { uploadImageToSupabaseStorage, normalizeReferenceImages, executeResilientImageGeneration } from './storageService';
+import { handleElevenLabsTTS, handleElevenLabsVoices } from '../api/elevenlabs';
+import { FathomITSPedagogicalEngine } from './fathomITSEngine';
 
 dotenv.config();
 
@@ -76,6 +78,38 @@ app.get('/api/health', (_req: Request, res: Response) => {
       inference: 'online'
     }
   });
+});
+
+// Fathom ITS 1 - ElevenLabs Audio Speech Endpoints
+app.post('/api/elevenlabs/tts', handleElevenLabsTTS);
+app.get('/api/elevenlabs/voices', handleElevenLabsVoices);
+app.post('/api/elevenlabs/preview', handleElevenLabsTTS);
+
+// Fathom ITS 1 - Autonomous Pedagogical Engine Endpoint (meta/muse-spark-1.3-contributor)
+app.post('/api/fathom-its/chat', async (req: Request, res: Response) => {
+  try {
+    const { userMessage, conversationHistory = [], studentProfile } = req.body || {};
+    if (userMessage === undefined || userMessage === null) {
+      return res.status(400).json({ error: 'User message is required.' });
+    }
+
+    const result = await FathomITSPedagogicalEngine.executeTutoringTurn({
+      userMessage: String(userMessage),
+      conversationHistory: Array.isArray(conversationHistory) ? conversationHistory : [],
+      studentProfile: studentProfile || {
+        targetLanguage: 'en',
+        voiceName: 'George',
+        currentCEFR: 'B1',
+        targetCEFR: 'B2',
+        currentPoints: 0
+      }
+    });
+
+    return res.status(200).json(result);
+  } catch (error: any) {
+    console.error('[Fathom ITS Server Error]:', error);
+    return res.status(500).json({ error: error?.message || 'Tutoring engine failure' });
+  }
 });
 
 const DEVELOPER_IDENTITY_DIRECTIVE = `

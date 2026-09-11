@@ -6,7 +6,10 @@ export type ModelType =
   | 'meta/muse-spark-1.2'
   | 'meta/muse-spark-1.3-contributor'
   | 'meta/muse-spark-1.2-contributor'
+  | 'fathom-its-1'
   | string;
+
+export * from './types/fathomITS';
 
 export type MediaType = 'image' | 'video' | 'audio' | 'document' | 'other';
 
