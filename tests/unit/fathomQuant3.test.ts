@@ -604,12 +604,12 @@ func main() {
         false,
         false,
         [],
-        ['talabat', 'github', 'linear', 'brave'],
-        'أريد بيتزا من طلبات ومراجعة مستودع كود'
+        ['talabat', 'github', 'linear', 'brave', 'web_search'],
+        'أريد بيتزا من طلبات ومراجعة مستودع كود والبحث في الويب'
       );
 
       const mcpTypes = milestones.filter(m => m.specialType === 'mcp');
-      expect(mcpTypes.length).toBe(4);
+      expect(mcpTypes.length).toBe(5);
 
       const talabatStep = milestones.find(m => m.mcpName === 'talabat');
       expect(Boolean(talabatStep)).toBe(true);
@@ -625,7 +625,11 @@ func main() {
 
       const braveStep = milestones.find(m => m.mcpName === 'brave');
       expect(Boolean(braveStep)).toBe(true);
-      expect(braveStep?.title).toContain('Web Search');
+      expect(braveStep?.title).toContain('Brave');
+
+      const webSearchStep = milestones.find(m => m.mcpName === 'web_search');
+      expect(Boolean(webSearchStep)).toBe(true);
+      expect(webSearchStep?.title).toContain('الويب الحي');
     });
 
     await harness.it('Ultra-Wide & Panoramic Aspect Engine: preserves 21:9 and 32:9 ratios without clipping or cropping', () => {

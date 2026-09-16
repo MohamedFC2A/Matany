@@ -189,7 +189,8 @@ export function parseReasoningMilestones(
   const isTalabatMcp = activeMcps.includes('talabat') || /(?:talabat|طلبات|AUTHORITATIVE TALABAT MCP)/i.test(combinedContext);
   const isGitHubMcp = activeMcps.includes('github') || /(?:github|جيت هب|AUTHORITATIVE OPENROUTER GITHUB MCP)/i.test(combinedContext);
   const isLinearMcp = activeMcps.includes('linear') || /(?:linear|لينيار|AUTHORITATIVE OPENROUTER LINEAR MCP)/i.test(combinedContext);
-  const isBraveMcp = activeMcps.includes('brave') || activeMcps.includes('web_search') || /(?:brave|البحث في الويب.*mcp|AUTHORITATIVE OPENROUTER BRAVE SEARCH MCP)/i.test(combinedContext);
+  const isBraveMcp = activeMcps.includes('brave') || /(?:brave|بحث Brave|AUTHORITATIVE OPENROUTER BRAVE SEARCH MCP)/i.test(combinedContext);
+  const isWebSearchProtocol = activeMcps.includes('web_search') || /(?:web_search|البحث في الويب.*بروتوكول|Live Web Search Protocol)/i.test(combinedContext);
 
   const mcpMilestones: Milestone[] = [];
   if (isTalabatMcp) {
@@ -225,11 +226,21 @@ export function parseReasoningMilestones(
   if (isBraveMcp) {
     mcpMilestones.push({
       id: 'step-mcp-brave',
-      title: 'استعلام وتدقيق محتوى الويب الحي • Web Search MCP Protocol',
-      details: 'تم استدعاء بروتوكول البحث في الويب واستخراج نتائج البحث المحدثة والتوثيقات الحية لعام 2026 بروتوكولياً.',
+      title: 'استعلام محرك Brave الآمن • Brave Search MCP Protocol',
+      details: 'تم استدعاء بروتوكول Brave Search واستخراج نتائج البحث الآمنة والمصادر الحيادية بروتوكولياً.',
       status: 'completed',
       specialType: 'mcp',
       mcpName: 'brave'
+    });
+  }
+  if (isWebSearchProtocol) {
+    mcpMilestones.push({
+      id: 'step-mcp-websearch',
+      title: 'استعلام وتدقيق محتوى الويب الحي • Live Web Search Protocol',
+      details: 'تم استدعاء بروتوكول البحث في الويب الحي واستخراج أحدث النتائج والمصادر الحية المعتمدة لعام 2026 بروتوكولياً.',
+      status: 'completed',
+      specialType: 'mcp',
+      mcpName: 'web_search'
     });
   }
 

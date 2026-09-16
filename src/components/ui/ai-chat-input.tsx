@@ -295,9 +295,6 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
       }
     }, [onToggleBraveMcp]);
 
-    const activeProtocolsCount = (isTalabatActive ? 1 : 0) + (isGitHubMcpActive ? 1 : 0) + (isLinearMcpActive ? 1 : 0) + (isBraveMcpActive ? 1 : 0);
-    const hasActiveProtocol = activeProtocolsCount > 0;
-
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [activeAttachment, setActiveAttachment] = useState<Attachment | null>(null);
     const [forensicModalSrc, setForensicModalSrc] = useState<string | File | Blob | null>(null);
@@ -341,6 +338,9 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
         setInternalDeepSearch(prev => !prev);
       }
     };
+
+    const activeProtocolsCount = (isTalabatActive ? 1 : 0) + (isGitHubMcpActive ? 1 : 0) + (isLinearMcpActive ? 1 : 0) + (isBraveMcpActive ? 1 : 0) + (isDeepSearchEffective ? 1 : 0);
+    const hasActiveProtocol = activeProtocolsCount > 0;
 
     const isControlled = controlledValue !== undefined;
     const value = isControlled ? controlledValue : localValue;
@@ -1289,39 +1289,9 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                       )}
                     </button>
 
-                    {/* 6. Deep Search Toggle */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        toggleDeepSearch();
-                        setIsActionsMenuOpen(false);
-                      }}
-                      className={cn(
-                        "w-full flex items-center justify-between p-2 rounded-xl text-xs font-sans transition-all cursor-pointer text-right border",
-                        isDeepSearchEffective
-                          ? "bg-emerald-950/40 border-emerald-500/30 text-emerald-200"
-                          : "hover:bg-zinc-900/70 text-zinc-300 hover:text-white border-transparent hover:border-zinc-800/60"
-                      )}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className={cn(
-                          "size-7 rounded-lg flex items-center justify-center shrink-0 border transition-all",
-                          isDeepSearchEffective
-                            ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
-                            : "bg-zinc-900 border-zinc-800 text-emerald-400"
-                        )}>
-                          <Search className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="font-semibold text-xs text-white">البحث في الويب</span>
-                      </div>
-                      {isDeepSearchEffective && (
-                        <span className="size-2 rounded-full bg-emerald-400 shrink-0 ring-2 ring-emerald-400/20" />
-                      )}
-                    </button>
-
                     <div className="my-1 border-t border-white/[0.06]" />
 
-                    {/* 7. Protocol Assistant Tools (Nested Sub-menu Trigger) */}
+                    {/* 6. Protocol Assistant Tools (Nested Sub-menu Trigger) */}
                     <button
                       type="button"
                       onClick={() => setActionsMenuView('protocols')}
@@ -1515,8 +1485,8 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                           <Globe className="w-3.5 h-3.5" />
                         </div>
                         <div className="flex flex-col text-right">
-                          <span className="font-semibold text-xs text-white">البحث في الويب (Web Search MCP)</span>
-                          <span className="text-[10px] text-zinc-400 font-sans">استعلام ذكي واستخراج محتوى الويب الحي بروتوكولياً</span>
+                          <span className="font-semibold text-xs text-white">بحث Brave (Brave Search MCP)</span>
+                          <span className="text-[10px] text-zinc-400 font-sans">استعلام فائق عبر محرك Brave والبحث في الويب بروتوكولياً</span>
                         </div>
                       </div>
                       <span className={cn(
@@ -1526,6 +1496,38 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                           : "bg-white/[0.05] text-zinc-400 border-white/10"
                       )}>
                         {isBraveMcpActive ? "مفعّل" : "تشغيل"}
+                      </span>
+                    </button>
+
+                    {/* 5. Live Web Search Protocol Tool */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleDeepSearch();
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-between p-2 rounded-xl text-xs font-sans transition-all cursor-pointer text-right border",
+                        isDeepSearchEffective
+                          ? "bg-zinc-900 border-zinc-700 text-white"
+                          : "hover:bg-zinc-900/70 text-zinc-300 hover:text-white border-transparent hover:border-zinc-800/60"
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 shrink-0">
+                          <Search className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex flex-col text-right">
+                          <span className="font-semibold text-xs text-white">البحث في الويب (Web Search)</span>
+                          <span className="text-[10px] text-zinc-400 font-sans">محرك البحث الحي المباشر واستخراج مصادر الويب الحية لعام 2026</span>
+                        </div>
+                      </div>
+                      <span className={cn(
+                        "text-[10px] font-sans px-2 py-0.5 rounded border transition-colors",
+                        isDeepSearchEffective
+                          ? "bg-white/10 text-emerald-300 border-white/20 font-bold"
+                          : "bg-white/[0.05] text-zinc-400 border-white/10"
+                      )}>
+                        {isDeepSearchEffective ? "مفعّل" : "تشغيل"}
                       </span>
                     </button>
                   </div>
@@ -1968,13 +1970,29 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                       {isBraveMcpActive && (
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-zinc-900 border border-white/10 text-xs text-zinc-100">
                           <Globe className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                          <span className="font-semibold text-xs">بحث Brave MCP</span>
-                          <span className="text-[9px] px-1 rounded bg-zinc-800 text-cyan-300 border border-white/10">ويب</span>
+                          <span className="font-semibold text-xs">بحث Brave (Brave MCP)</span>
+                          <span className="text-[9px] px-1 rounded bg-zinc-800 text-cyan-300 border border-white/10">Brave</span>
                           <button
                             type="button"
                             onClick={toggleBraveMcp}
                             className="size-4 rounded hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center ml-0.5 transition-colors cursor-pointer"
                             title="إلغاء وضع Brave MCP"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+
+                      {isDeepSearchEffective && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-zinc-900 border border-white/10 text-xs text-zinc-100">
+                          <Search className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span className="font-semibold text-xs">البحث في الويب (Web Search)</span>
+                          <span className="text-[9px] px-1 rounded bg-zinc-800 text-emerald-300 border border-white/10">بحث حي</span>
+                          <button
+                            type="button"
+                            onClick={toggleDeepSearch}
+                            className="size-4 rounded hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center ml-0.5 transition-colors cursor-pointer"
+                            title="إلغاء البحث في الويب"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -1990,6 +2008,7 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                           if (isGitHubMcpActive) toggleGitHubMcp();
                           if (isLinearMcpActive) toggleLinearMcp();
                           if (isBraveMcpActive) toggleBraveMcp();
+                          if (isDeepSearchEffective) toggleDeepSearch();
                         }}
                         className="text-[10px] text-zinc-400 hover:text-rose-300 transition-colors font-sans px-2 py-1 rounded hover:bg-white/[0.04] cursor-pointer shrink-0"
                       >

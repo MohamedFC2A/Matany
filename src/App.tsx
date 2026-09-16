@@ -692,12 +692,14 @@ const MainAppContent: React.FC = () => {
     const isGitHubMcpEffective = Boolean((meta as any)?.isGitHubMcpActive || isGitHubMcpActive);
     const isLinearMcpEffective = Boolean((meta as any)?.isLinearMcpActive || isLinearMcpActive);
     const isBraveMcpEffective = Boolean((meta as any)?.isBraveMcpActive || isBraveMcpActive);
+    const isWebSearchEffective = Boolean(meta?.deepSearch);
 
     const activeMcps: string[] = [
       ...(isTalabatEffective ? ['talabat'] : []),
       ...(isGitHubMcpEffective ? ['github'] : []),
       ...(isLinearMcpEffective ? ['linear'] : []),
-      ...(isBraveMcpEffective ? ['brave'] : [])
+      ...(isBraveMcpEffective ? ['brave'] : []),
+      ...(isWebSearchEffective ? ['web_search'] : [])
     ];
 
     const assistantPlaceholderId = generateUuid();
