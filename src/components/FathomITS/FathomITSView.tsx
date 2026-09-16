@@ -11,10 +11,10 @@ import {
   TargetLanguageCode,
   CEFRLevel,
   TutorVoice,
-  DiagnosticResult
+  DiagnosticResult,
+  CURATED_TUTOR_VOICES
 } from '../../types/fathomITS';
 import { FathomITSService } from '../../services/fathomITSService';
-import { CURATED_TUTOR_VOICES } from '../../../api/elevenlabs';
 import { getOrCreateDeviceId } from '../../services/supabase';
 import { FathomITSOnboarding } from './FathomITSOnboarding';
 import { FathomITSDiagnosticTest } from './FathomITSDiagnosticTest';

@@ -434,7 +434,6 @@ export async function streamChatCompletion({
           reasoning: accumulatedReasoning,
           isThinking: true
         }, !wasThinking);
-        return;
       }
 
       if (!deltaContent) return;
@@ -577,10 +576,9 @@ export async function streamChatCompletion({
       if (arabicMatch !== -1) {
         accumulatedContent = accumulatedReasoning.substring(arabicMatch).trim();
         accumulatedReasoning = accumulatedReasoning.substring(0, arabicMatch).trim();
-      } else if (/[\u0621-\u064A]/.test(accumulatedReasoning)) {
-        accumulatedContent = accumulatedReasoning.trim();
       } else {
-        accumulatedContent = 'تم استكمال الاستدلال وتدقيق الشروط والفرضيات بنجاح.';
+        // Honest transparency: display actual reasoning synthesis instead of synthetic placeholders
+        accumulatedContent = accumulatedReasoning.trim();
       }
       isThinking = false;
       onChunk({

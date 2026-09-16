@@ -8,8 +8,7 @@ import {
   CreditCard, 
   Activity, 
   User as UserIcon, 
-  ArrowRight,
-  GraduationCap
+  ArrowRight
 } from 'lucide-react';
 
 interface TopBarProps {
@@ -49,7 +48,6 @@ export const TopBar: React.FC<TopBarProps> = ({
   onNavigateToFathomITS,
 }) => {
   const isSecondaryPage = currentView !== 'chat' && currentView !== 'landing';
-  const isFathomITSActive = activeModel === 'fathom-its-1' || currentView === 'fathom-its';
 
   const getViewTitle = () => {
     switch (currentView) {
@@ -76,21 +74,6 @@ export const TopBar: React.FC<TopBarProps> = ({
             <Menu className="w-4 h-4 text-zinc-200" />
             <span className="hidden sm:inline font-sans text-xs">سجل المحادثات</span>
           </button>
-
-          {/* Quick Fathom ITS 1 mobile launcher */}
-          <button
-            type="button"
-            onClick={onNavigateToFathomITS}
-            className={`md:hidden flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-              isFathomITSActive
-                ? 'bg-white/15 border-white/25 text-white font-bold'
-                : 'bg-white/[0.04] border-white/[0.07] text-zinc-300 hover:text-white'
-            }`}
-            title="نموذج Fathom ITS 1 التعليمي"
-          >
-            <GraduationCap className="w-3.5 h-3.5" />
-            <span className="font-mono text-[11px]">Fathom ITS</span>
-          </button>
         </div>
 
         {/* Center - Mobile View Title / Indicator */}
@@ -104,20 +87,6 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         {/* Center / Fast Navigation Pills (Desktop & Tablet Only) */}
         <nav className="hidden md:flex items-center gap-1 bg-white/[0.03] p-1 rounded-2xl border border-white/[0.06] backdrop-blur-md shadow-inner">
-          <button
-            type="button"
-            onClick={onNavigateToFathomITS}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-              isFathomITSActive
-                ? 'bg-white/[0.14] border border-white/[0.22] text-white shadow-[0_2px_12px_rgba(0,0,0,0.5)] font-bold'
-                : 'text-zinc-300 hover:text-white hover:bg-white/[0.05] border border-white/[0.05]'
-            }`}
-          >
-            <GraduationCap className="w-3.5 h-3.5 text-zinc-200" />
-            <span className="font-mono font-bold tracking-tight">Fathom ITS 1</span>
-            <span className="px-1.5 py-0.5 rounded text-[9px] font-sans bg-white/10 text-zinc-200">التعليم الذكي</span>
-          </button>
-
           <button
             type="button"
             onClick={onNavigateToChat}

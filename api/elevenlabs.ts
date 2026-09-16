@@ -1,79 +1,9 @@
 import type { Request, Response } from 'express';
+import { CURATED_TUTOR_VOICES } from '../src/types/fathomITS';
+
+export { CURATED_TUTOR_VOICES };
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || 'sk_858ae6e9712e57c6f212b1c3f6057dd48b72786b06eb1034';
-
-export const CURATED_TUTOR_VOICES = [
-  {
-    id: 'JBFqnCBsd6RMkjVDRZzb',
-    name: 'George',
-    avatar: '🇬🇧',
-    accent: 'British RP (Cambridge/Oxford Standard)',
-    gender: 'male',
-    roleTitle: 'Cambridge Academic & Phonetics Coach',
-    description: 'نبرة أكاديمية بريطانية فصحى، رصينة ووقورة، مثالية لإتقان النطق ومخارج الحروف وقواعد كامبريدج.',
-    previewText: 'Good day! I am George, your Cambridge academic mentor at Fathom ITS 1. Are you prepared to elevate your English to native precision?'
-  },
-  {
-    id: 'Xb7hH8MSUJpSbSDYk0k2',
-    name: 'Alice',
-    avatar: '👩‍🏫',
-    accent: 'British Educated Standard',
-    gender: 'female',
-    roleTitle: 'Pedagogical Fluency & Grammar Specialist',
-    description: 'معلمة بريطانية واضحة المخارج ونقية الإيقاع، ممتازة في تفكيك القواعد المعقدة وبناء الثقة اللغوية.',
-    previewText: 'Hello! I am Alice. Together, we will master grammar, expand your vocabulary, and build unshakable fluency step by step.'
-  },
-  {
-    id: 'XrExE9yKIg1WjnnlVkGX',
-    name: 'Matilda',
-    avatar: '🎓',
-    accent: 'American Academic Standard',
-    gender: 'female',
-    roleTitle: 'Advanced Syntax & CEFR Examiner',
-    description: 'مدربة لغوية أمريكية متخصصة في التحليل النحوي الدقيق، صبورة وعميقة التفسير.',
-    previewText: 'Greetings! I am Matilda. Let us systematically diagnose your current language level and engineer your path to C2 mastery.'
-  },
-  {
-    id: 'EXAVITQu4vr4xnSDxMaL',
-    name: 'Sarah',
-    avatar: '🌟',
-    accent: 'General American Conversational',
-    gender: 'female',
-    roleTitle: 'Natural Fluency & Idiomatic Expression Coach',
-    description: 'أسلوب تفاعلي حيوي ودافئ، تركز على المحادثة الطبيعية وتصحيح التراكيب اللفظية الواقعية.',
-    previewText: 'Hi there! I am Sarah. You and I are going to transform the way you speak, making everyday conversations effortless and natural.'
-  },
-  {
-    id: 'IKne3meq5aSn9XLyUdCD',
-    name: 'Charlie',
-    avatar: '🌏',
-    accent: 'Australian Articulate Standard',
-    gender: 'male',
-    roleTitle: 'Interactive Communication & Nuance Trainer',
-    description: 'نبرة عميقة وجذابة، بارع في توضيح الفروق الدقيقة بين الكلمات والمصطلحات المتقدمة.',
-    previewText: 'G day! I am Charlie. Precision and clarity are our targets. Let us sharpen your listening and speaking instincts right now.'
-  },
-  {
-    id: 'hpp4J3VqNfWAUOO0d1Us',
-    name: 'Bella',
-    avatar: '✨',
-    accent: 'American Professional Standard',
-    gender: 'female',
-    roleTitle: 'Phonetics & Articulation Specialist',
-    description: 'نبرة مشرقة ودقيقة جداً، تركز على تدريب الأذن والتصحيح الفونيتيكي للأصوات الصعبة.',
-    previewText: 'Welcome! I am Bella. We will polish your pronunciation, sentence structure, and listening comprehension point by point.'
-  },
-  {
-    id: 'N2lVS1w4EtoT3dr4eOWO',
-    name: 'Callum',
-    avatar: '⚡',
-    accent: 'Transatlantic Dynamic Cadence',
-    gender: 'male',
-    roleTitle: 'Rapid Conversational & Listening Coach',
-    description: 'صوت ديناميكي رشيق ونقي، يدربك على سرعة الاستيعاب السمعي والرد التلقائي دون تردد.',
-    previewText: 'Ready to challenge yourself? I am Callum. We will stretch your linguistic boundaries with real-world, high-speed dialogue.'
-  }
-];
 
 // In-memory LRU audio preview cache to minimize ElevenLabs API calls
 const audioCache = new Map<string, { buffer: Buffer; mime: string; timestamp: number }>();

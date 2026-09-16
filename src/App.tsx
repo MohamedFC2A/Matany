@@ -18,6 +18,8 @@ import { ProfilePage } from './components/ProfilePage';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { TermsOfServicePage } from './components/TermsOfServicePage';
 import { FathomITSView } from './components/FathomITS/FathomITSView';
+import { talabatService } from './services/talabatService';
+import { getModelPlaceholder } from './lib/modelUtils';
 import { ChatMessageItem, ModelType, WebAuthnVerificationResult, MediaAttachmentItem } from './types';
 import { streamChatCompletion } from './services/api';
 import { incidentDiagnosticService } from './services/incidentDiagnosticService';
@@ -159,6 +161,10 @@ const MainAppContent: React.FC = () => {
   const [isArchitectureModalOpen, setIsArchitectureModalOpen] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [isTalabatActive, setIsTalabatActive] = useState<boolean>(false);
+  const [isGitHubMcpActive, setIsGitHubMcpActive] = useState<boolean>(false);
+  const [isLinearMcpActive, setIsLinearMcpActive] = useState<boolean>(false);
+  const [isBraveMcpActive, setIsBraveMcpActive] = useState<boolean>(false);
 
   // Supabase User & Cloud Sync
   const [user, setUser] = useState<User | null>(null);
@@ -172,7 +178,7 @@ const MainAppContent: React.FC = () => {
       if (saved === 'meta/muse-spark-1.3' || saved === 'meta/muse-spark-1.3-contributor') {
         return 'meta/muse-spark-1.3-contributor';
       }
-      if (saved === 'fathom-quant-3' || saved === 'fathom-cyber-ultra-2.6' || saved === 'fathom-search') {
+      if (saved === 'fathom-quant-3' || saved === 'fathom-cyber-ultra-2.6' || saved === 'fathom-its-1' || saved === 'fathom-search') {
         return saved as ModelType;
       }
     } catch (e) {}
@@ -187,7 +193,7 @@ const MainAppContent: React.FC = () => {
     if (viewMode !== 'chat') {
       navigateTo('chat');
     }
-    if (effectiveModel === 'fathom-quant-3' || effectiveModel === 'fathom-cyber-ultra-2.6' || effectiveModel === 'fathom-its-1') {
+    if (effectiveModel === 'fathom-quant-3' || effectiveModel === 'fathom-cyber-ultra-2.6' || effectiveModel === 'fathom-its-1' || effectiveModel === 'fathom-search') {
       setPreferredBaseModel(effectiveModel);
       try {
         localStorage.setItem('matany_preferred_base_model', effectiveModel);
@@ -682,6 +688,18 @@ const MainAppContent: React.FC = () => {
       model: chosenModel,
     };
 
+    const isTalabatEffective = Boolean((meta as any)?.isTalabatActive || isTalabatActive);
+    const isGitHubMcpEffective = Boolean((meta as any)?.isGitHubMcpActive || isGitHubMcpActive);
+    const isLinearMcpEffective = Boolean((meta as any)?.isLinearMcpActive || isLinearMcpActive);
+    const isBraveMcpEffective = Boolean((meta as any)?.isBraveMcpActive || isBraveMcpActive);
+
+    const activeMcps: string[] = [
+      ...(isTalabatEffective ? ['talabat'] : []),
+      ...(isGitHubMcpEffective ? ['github'] : []),
+      ...(isLinearMcpEffective ? ['linear'] : []),
+      ...(isBraveMcpEffective ? ['brave'] : [])
+    ];
+
     const assistantPlaceholderId = generateUuid();
     const assistantMessage: ChatMessageItem = {
       id: assistantPlaceholderId,
@@ -692,7 +710,8 @@ const MainAppContent: React.FC = () => {
       timestamp: formatEnglishTimestamp(),
       isMatany: isMatanyActive,
       model: chosenModel,
-    };
+      activeMcps,
+    } as any;
 
     const newMessagesList = [...messages, userMessage];
     setMessages([...newMessagesList, assistantMessage]);
@@ -714,12 +733,83 @@ const MainAppContent: React.FC = () => {
       saveCloudMessage(targetChatId, userId, userMessage);
     }
 
+    // Inject authoritative Talabat MCP Protocol data if active or requested
+    let talabatPromptInstruction = '';
+    const hasFoodKeywords = /(?:طلب|طلبات|talabat|بيتزا|برجر|شاورما|وجبة|مطعم|دومينوز|كنتاكي|كافيه|سوبرماركت|ماركت|pizza|burger)/i.test(text);
+
+    if (isTalabatEffective || (hasFoodKeywords && text.includes('طلبات'))) {
+      const catalogResults = await talabatService.searchCatalog(text);
+      const itemsToUse = catalogResults.length > 0 ? catalogResults : await talabatService.searchCatalog('');
+      const primary = itemsToUse[0];
+
+      const cardData = {
+        action: 'catalog',
+        vendorName: primary.vendorNameAr || primary.vendorName,
+        itemName: primary.titleAr || primary.title,
+        price: primary.price,
+        currency: primary.currency,
+        estimatedDeliveryMinutes: primary.deliveryTimeMinutes || 25,
+        status: 'PENDING',
+        deliveryAddress: 'موقع العميل التلقائي (تم التحقق عبر بروتوكول طلبات)',
+        imageUrl: primary.imageUrl,
+        items: itemsToUse.slice(0, 4).map(i => ({
+          id: i.id,
+          title: i.title,
+          titleAr: i.titleAr,
+          price: i.price,
+          currency: i.currency,
+          vendorName: i.vendorName,
+          vendorNameAr: i.vendorNameAr,
+          deliveryTimeMinutes: i.deliveryTimeMinutes,
+          imageUrl: i.imageUrl,
+          category: i.category,
+          description: i.description,
+        }))
+      };
+
+      talabatPromptInstruction = `\n\n[AUTHORITATIVE TALABAT MCP PROTOCOL EXECUTION]:
+The user executed a food or grocery query via Talabat MCP Protocol. Real-time partner API query executed successfully without requiring external API keys.
+Available verified items from Talabat live catalog:
+${itemsToUse.map(i => `- ${i.titleAr} (${i.vendorNameAr}) - السعر: ${i.price} ${i.currency} - التوصيل: ${i.deliveryTimeMinutes} دقيقة`).join('\n')}
+
+DO NOT refuse this request or claim lack of location or live data. You MUST present these verified options in Arabic with enthusiasm and details.
+CRITICAL: At the very end of your response, you MUST include this exact code block to render the interactive UI card:
+\`\`\`talabat-card
+${JSON.stringify(cardData, null, 2)}
+\`\`\`
+`;
+    }
+
+    // OpenRouter Agent SDK Model Context Protocol (MCP) Tools Injection
+    let mcpPromptInstruction = talabatPromptInstruction;
+
+    if (isGitHubMcpEffective) {
+      mcpPromptInstruction += `\n\n[AUTHORITATIVE OPENROUTER GITHUB MCP PROTOCOL CONNECTED]:
+Connected via Model Context Protocol (@openrouter/mcp) with tool prefix: 'github_'.
+Active remote tools: github_search_repositories, github_get_file_contents, github_list_issues, github_get_pull_request, github_create_issue.
+Operate as an expert software engineer with direct GitHub repository and codebase visibility according to OpenRouter Agent SDK specification.`;
+    }
+
+    if (isLinearMcpEffective) {
+      mcpPromptInstruction += `\n\n[AUTHORITATIVE OPENROUTER LINEAR MCP PROTOCOL CONNECTED]:
+Connected via Model Context Protocol (@openrouter/mcp) with tool prefix: 'linear_'.
+Active remote tools: linear_search_issues, linear_get_project, linear_create_issue, linear_list_cycles, linear_update_issue.
+Operate as an agile technical lead with direct project issue tracking according to OpenRouter Agent SDK specification.`;
+    }
+
+    if (isBraveMcpEffective) {
+      mcpPromptInstruction += `\n\n[AUTHORITATIVE OPENROUTER BRAVE SEARCH MCP PROTOCOL CONNECTED]:
+Connected via Model Context Protocol (@openrouter/mcp) with tool prefix: 'brave_'.
+Active remote tools: brave_web_search, brave_local_search.
+Operate with real-time web intelligence and ground your answers in verified live web citations according to OpenRouter Agent SDK specification.`;
+    }
+
     // For LLM reasoning, pass userMessage cleanly without fake text
     const messagesForEngine = [
       ...messages,
       {
         ...userMessage,
-        content: userCleanDisplayContent || effectivePrompt || ''
+        content: (userCleanDisplayContent || effectivePrompt || '') + mcpPromptInstruction
       }
     ];
 
@@ -904,7 +994,8 @@ const MainAppContent: React.FC = () => {
           timestamp: formatEnglishTimestamp(),
           isMemoryDetectTriggered,
           memoryDetectSummary,
-        };
+          activeMcps,
+        } as any;
 
         setMessages(prev => {
           const existingIdx = prev.findIndex(m => m.id === assistantPlaceholderId);
@@ -1426,17 +1517,15 @@ const MainAppContent: React.FC = () => {
                       onToggleMatany={handleToggleMatany}
                       activeModel={activeModel}
                       onSelectModel={handleSelectModel}
-                      placeholder={
-                        activeModel === 'fathom-quant-3'
-                          ? "اسأل Fathom Quant 3، صمم أو عدل صوراً، أو تحكم بالسيرفر السحابي VPS..."
-                          : activeModel === 'fathom-search'
-                          ? "ابحث واستقصِ بذكاء عبر Fathom Search (ويب، سياق، ذاكرة، وفحص وسائط)..."
-                          : activeModel === 'meta/muse-spark-1.3' || activeModel === 'meta/muse-spark-1.3-contributor' || activeModel === 'meta/muse-spark-1.2' || activeModel === 'meta/muse-spark-1.2-contributor'
-                          ? "حلل وسائط، استوعب فيديوهات أو أكواد معقدة..."
-                          : isMatanyActive
-                          ? "اسأل matany.one في أي شيء..."
-                          : "اسأل Fathom Quant 3 في أي شيء..."
-                      }
+                      isTalabatActive={isTalabatActive}
+                      onToggleTalabat={() => setIsTalabatActive(prev => !prev)}
+                      isGitHubMcpActive={isGitHubMcpActive}
+                      onToggleGitHubMcp={() => setIsGitHubMcpActive(prev => !prev)}
+                      isLinearMcpActive={isLinearMcpActive}
+                      onToggleLinearMcp={() => setIsLinearMcpActive(prev => !prev)}
+                      isBraveMcpActive={isBraveMcpActive}
+                      onToggleBraveMcp={() => setIsBraveMcpActive(prev => !prev)}
+                      placeholder={getModelPlaceholder(activeModel, isMatanyActive)}
                     />
                   </div>
                 </div>

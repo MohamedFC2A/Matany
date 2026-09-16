@@ -65,5 +65,11 @@ export function getModelPlaceholder(
   if (isMatany) {
     return 'اكتب استفسارك أو رسالتك هنا... (الوضع الحر)';
   }
+  if (model === 'fathom-quant-3') {
+    return 'اسأل Fathom Quant 3، صمم أو عدل صوراً، أو تحكم بالسيرفر السحابي VPS...';
+  }
+  if (model === 'fathom-cyber-ultra-2.6') {
+    return 'اطرح مسألة برمجية أو معمارية أو أمنية معقدة على Fathom Cyber Ultra 2.6...';
+  }
   return 'اكتب استفسارك أو رسالتك هنا...';
 }

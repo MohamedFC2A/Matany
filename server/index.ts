@@ -2859,6 +2859,12 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     }
   );
 
+  const unrequestedVisualGuard = `
+[قاعدة سيادية قطعية لمنع توليد الصور أو الـ SVG دون طلب صريح - ZERO UNREQUESTED IMAGES OR SVGS INVARIANT]:
+- يُحظر تماماً وبشكل قاطع توليد كتل المعالجة العصبية \`\`\`neural-image أو كود الـ SVG داخل \`\`\`svg إلا إذا طلب المستخدم صراحة وبشكل مباشر صورة أو رسمة فوتوغرافية أو كود SVG/فيكتور.
+- إذا كان طلب المستخدم كوداً برمجياً، تصميم موقع أو صفحة ويب (HTML/React/Tailwind)، معمارية برمجية، استفساراً، شرحاً، دراسة، مقارنة، أو حواراً: قدّم الإجابة حصراً كنص عربي فصيح أو كتل كود برمجية عادية. يُحظر استبدال الكود أو الشرح بصورة أو رسمة SVG نهائياً.`;
+  activeSystemPrompt += `\n${unrequestedVisualGuard}`;
+
   // GPAENG Autonomous Diagnostic Dossier & Incident Prevention Hook
   if (GpaengDiagnosticEngine.isGpaengTrigger(lastUserText)) {
     console.log('[GPAENG-SERVER] ⚡ Sovereign Diagnostic Command "GPAENG" detected! Fetching live incident dossier from Supabase...');
@@ -3087,10 +3093,11 @@ app.post('/api/chat', async (req: Request, res: Response) => {
       console.log(`[FATHOM SEARCH PIPELINE] OpenRouter Native Web Search Server Tool activated for Topic: "${activeSearchTopic.slice(0, 80)}..."`);
       searchMilestonesStreamText = `🔍 [استعلام حي وتدقيق المصادر: [البحث عن: "${activeSearchTopic}"]: تم فحص البيانات المحدثة بنجاح]\n\n`;
 
-      const isSvgOrImageIntent = dynamicTuning.detectedIntent === 'SVG_VECTOR_STUDIO_AND_DESIGN' ||
-        /(?:svg|فيكتور|متجهات|vector|رسمة|صورة|شعار|لوجو|ايقونة|أيقونة|ارسم|صمم)/i.test(rawUserContent);
+      const isExplicitSvgInSearch = dynamicTuning.detectedIntent === 'SVG_VECTOR_STUDIO_AND_DESIGN' &&
+        /(?:كود\s*svg|ملف\s*svg|\.svg\b|رسمة\s*svg|تصميم\s*svg|vector\s*code)/i.test(rawUserContent) &&
+        !/(?:كود|برمجة|دالة|موقع|صفحة|واجهة|react|python|api|bug|database)/i.test(rawUserContent);
 
-      const fathomSearchGuidance = isSvgOrImageIntent ? `
+      const fathomSearchGuidance = isExplicitSvgInSearch ? `
 [توجيه استخبارات البحث البصري وتوليد الصور والرسومات — VISUAL SEARCH & DESIGN SYNTHESIS DIRECTIVE]:
 - استند إلى أداة البحث في الويب لاستخلاص الملامح البصرية الدقيقة، الألوان الواقعية، والخصائص البصرية.
 - قم فوراً بترجمة كافة المعلومات المستخلصة من البحث إلى كود SVG نقي متقن داخل \`\`\`svg ... \`\`\` بدقة 2K / 4K.` : `
@@ -3751,8 +3758,8 @@ app.post('/api/chat', async (req: Request, res: Response) => {
 
     const seenCitationUrls = new Set<string>();
     let citationCount = 0;
-    const recentStreamWords: string[] = [];
-    const recentReasoningWords: string[] = [];
+    let lastSeenContentChunk = '';
+    let consecutiveIdenticalChunkCount = 0;
     let isCycleLoopDetected = false;
     // Universal Fathom Autonomous Reasoning & Anti-Loop Cognitive Layer
     const fathomEngine = new FathomCyberReasoningEngine();
@@ -3808,84 +3815,33 @@ app.post('/api/chat', async (req: Request, res: Response) => {
                 const reasoningChunk = delta?.reasoning_content ?? delta?.reasoning ?? delta?.thought;
                 if (reasoningChunk) {
                   fullServerReasoning += reasoningChunk;
-                  const engineCheck = fathomEngine.processStreamingChunk(reasoningChunk);
-                  if (engineCheck.shouldCutThinking) {
-                    isCycleLoopDetected = true;
-                    console.warn(`[MATANY-SERVER] ⚠️ Fathom Reasoning Engine cycle detected in thinking: ${engineCheck.reason}. Safe break.`);
-                    const pending = engineCheck.safeClosingSuffix || DeterministicCycleDetector.getPendingDelimiters(fullServerReasoning);
-                    if (pending && !isClientDisconnected && !res.writableEnded) {
-                      res.write(`data: ${JSON.stringify({ choices: [{ delta: { reasoning_content: pending } }] })}\n\n`);
-                    }
-                    break;
-                  }
-
-                  // Fast 3-repetition break on reasoning words
-                  const cleanChunk = reasoningChunk.replace(/[|\-:*#_`>\[\]()]/g, ' ').trim();
-                  const incomingWords = cleanChunk.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
-                  for (const w of incomingWords) {
-                    recentReasoningWords.push(w);
-                    if (recentReasoningWords.length > 60) recentReasoningWords.shift();
-                  }
-
-                  if (fullServerReasoning.length > 200 && recentReasoningWords.length >= 24) {
-                    const phrase = recentReasoningWords.slice(-4).join(' ');
-                    let count = 0;
-                    for (let i = 0; i <= recentReasoningWords.length - 4; i++) {
-                      if (recentReasoningWords.slice(i, i + 4).join(' ') === phrase) {
-                        count++;
-                      }
-                    }
-                    if (count >= 3 && phrase.length > 15) {
-                      isCycleLoopDetected = true;
-                      console.warn(`[MATANY-SERVER] ⚠️ Degenerate cycle loop detected on reasoning pattern "${phrase}". Ending stream.`);
-                      const pending = DeterministicCycleDetector.getPendingDelimiters(fullServerReasoning);
-                      if (pending && !isClientDisconnected && !res.writableEnded) {
-                        res.write(`data: ${JSON.stringify({ choices: [{ delta: { reasoning_content: pending } }] })}\n\n`);
-                      }
-                      break;
-                    }
-                  }
+                  try {
+                    // Update internal cognitive graph & DAG without interrupting upstream thinking
+                    fathomEngine.processStreamingChunk(reasoningChunk);
+                  } catch {}
                 }
                 if (delta?.content) {
                   fullServerContent += delta.content;
 
-                  const cycleRes = fathomEngine.getCycleDetector().evaluateChunk(delta.content);
-                  if (cycleRes.hasCycle && (cycleRes.suggestedAction === 'FORCE_BREAK' || cycleRes.loopCount >= 2)) {
-                    isCycleLoopDetected = true;
-                    console.warn(`[MATANY-SERVER] ⚠️ Fathom Cycle Detector triggered on content (loopCount=${cycleRes.loopCount}). Safe break.`);
-                    const pending = cycleRes.pendingDelimiters || DeterministicCycleDetector.getPendingDelimiters(fullServerContent);
-                    if (pending && !isClientDisconnected && !res.writableEnded) {
-                      fullServerContent += pending;
-                      res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: pending } }] })}\n\n`);
-                    }
-                    break;
-                  }
-
-                  // Real-time Anti-Loop & Degeneracy Interceptor on FINAL content
-                  const cleanChunk = delta.content.replace(/[|\-:*#_`>\[\]()]/g, ' ').trim();
-                  const incomingWords = cleanChunk.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
-                  for (const w of incomingWords) {
-                    recentStreamWords.push(w);
-                    if (recentStreamWords.length > 60) recentStreamWords.shift();
-                  }
-
-                  if (fullServerContent.length > 200 && recentStreamWords.length >= 24) {
-                    const phrase = recentStreamWords.slice(-4).join(' ');
-                    let count = 0;
-                    for (let i = 0; i <= recentStreamWords.length - 4; i++) {
-                      if (recentStreamWords.slice(i, i + 4).join(' ') === phrase) {
-                        count++;
+                  // Robust Non-Trivial Consecutive Degeneracy Interceptor:
+                  // Prevents infinite runaway loops while preserving tables, lists, and repeated column data.
+                  const trimmedChunk = delta.content.trim();
+                  if (trimmedChunk.length > 30) {
+                    if (trimmedChunk === lastSeenContentChunk) {
+                      consecutiveIdenticalChunkCount++;
+                      if (consecutiveIdenticalChunkCount >= 8) {
+                        isCycleLoopDetected = true;
+                        console.warn(`[MATANY-SERVER] ⚠️ True consecutive runaway degeneration loop detected (${consecutiveIdenticalChunkCount}x identical chunks). Terminating stream safely.`);
+                        const pending = DeterministicCycleDetector.getPendingDelimiters(fullServerContent);
+                        if (pending && !isClientDisconnected && !res.writableEnded) {
+                          fullServerContent += pending;
+                          res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: pending } }] })}\n\n`);
+                        }
+                        break;
                       }
-                    }
-                    if (count >= 3 && phrase.length > 15) {
-                      isCycleLoopDetected = true;
-                      console.warn(`[MATANY-SERVER] ⚠️ Degenerate cycle loop detected on content pattern "${phrase}". Safely terminating output.`);
-                      const pending = DeterministicCycleDetector.getPendingDelimiters(fullServerContent);
-                      if (pending && !isClientDisconnected && !res.writableEnded) {
-                        fullServerContent += pending;
-                        res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: pending } }] })}\n\n`);
-                      }
-                      break;
+                    } else {
+                      lastSeenContentChunk = trimmedChunk;
+                      consecutiveIdenticalChunkCount = 0;
                     }
                   }
                 }

@@ -6,7 +6,7 @@ import rehypeKatex from 'rehype-katex';
 import { highlightCode } from '@/lib/syntaxHighlighter';
 import { ChatMessageItem, ResolvedLinkInfo } from '../types';
 import ChatReasoning from './ui/chat-reasoning';
-import { Check, Copy, Flame, X, ShieldCheck, Sparkles, Camera, ExternalLink, Globe, PhoneCall, Phone, Mail, Zap, Loader2, Play, Pause, Video, Music, FileText, FileCode, FileType, Clock, RotateCcw, Bell, Trash2, Calendar, CheckCircle2, FileSearch, Volume2, VolumeX } from 'lucide-react';
+import { Check, Copy, Flame, X, ShieldCheck, Sparkles, Camera, ExternalLink, Globe, PhoneCall, Phone, Mail, Zap, Loader2, Play, Pause, Video, Music, FileText, FileCode, FileType, Clock, RotateCcw, Bell, Trash2, Calendar, CheckCircle2, FileSearch, Volume2, VolumeX, GraduationCap, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { detectAndExtractUrl, extractAllCleanUrls, getFaviconUrl, extractYouTubeVideoId, getYouTubeThumbnailUrl, normalizeDisplayTimestamp, cleanMarkdownForClipboard, sanitizeMarkdownDisplay, cn } from '@/lib/utils';
 import { formatMediaDuration, formatFileSize } from '@/lib/mediaExtractor';
@@ -28,6 +28,7 @@ import { MsqQuizCard } from './ui/MsqQuizCard';
 import { MsqExamCard } from './ui/MsqExamCard';
 import { ActiveCorrectionCard } from './ui/ActiveCorrectionCard';
 import { ItsProgressBadge } from './ui/ItsProgressBadge';
+import { TalabatProtocolCard } from './ui/TalabatProtocolCard';
 import { FathomITSSoundManager } from './FathomITS/FathomITSSoundManager';
 import { Quant3PerfectionIcon } from './ui/Quant3PerfectionIcon';
 import { isVpsOrCloudRequest } from '@/lib/vpsUtils';
@@ -1607,6 +1608,20 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
     return null;
   }, [displayContent, message.id]);
 
+  // Stable first-class Talabat Protocol MCP Card extraction
+  const extractedTalabatData = useMemo(() => {
+    if (!displayContent) return null;
+    const match = /```(?:talabat-card|talabat_card|talabat)\s*(\{[\s\S]*?\})\s*```/i.exec(displayContent);
+    if (!match) return null;
+    try {
+      const parsed = JSON.parse(match[1]);
+      if (parsed) {
+        return parsed;
+      }
+    } catch {}
+    return null;
+  }, [displayContent]);
+
   // Clean markdown content excluding both SVG, Neural Image, and Fathom ITS blocks to prevent layout thrashing
   const displayContentWithoutSvgOrNeural = useMemo(() => {
     if (!displayContentWithoutSvg) return '';
@@ -1621,6 +1636,8 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
       .replace(/```(?:correction|its-correction)\s*\{[\s\S]*$/gi, '')
       .replace(/```(?:its-badge|badge|its-progress)\s*\{[\s\S]*?\}\s*```/gi, '')
       .replace(/```(?:its-badge|badge|its-progress)\s*\{[\s\S]*$/gi, '')
+      .replace(/```(?:talabat-card|talabat_card|talabat)\s*\{[\s\S]*?\}\s*```/gi, '')
+      .replace(/```(?:talabat-card|talabat_card|talabat)\s*\{[\s\S]*$/gi, '')
       .replace(/\[NEURAL-IMAGE-STUDIO:[^\]]+\]/gi, '')
       .replace(/\[VPS_CONTROL_ROOM(?::\s*[^\]]+)?\]/gi, '')
       .trim();
@@ -2008,7 +2025,20 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
     >
       <div className="flex items-center justify-between w-full mb-1.5 px-1 text-xs text-zinc-400 select-none">
         <div className="flex items-center gap-1.5 font-sans font-medium flex-wrap">
-          {(message.model === 'fathom-quant-3' || !message.model) && (
+          {message.model === 'fathom-its-1' && (
+            <span className="inline-flex items-center gap-1.5 text-[10.5px] font-mono font-medium px-2 py-0.5 rounded bg-sky-500/10 text-sky-200 border border-sky-500/25 select-none shadow-sm">
+              <GraduationCap className="w-3.5 h-3.5 text-sky-300 shrink-0" />
+              <span>Fathom ITS 1</span>
+              <span className="text-[9px] font-sans px-1 py-0.2 rounded bg-sky-500/20 text-sky-200">التعليم الذكي</span>
+            </span>
+          )}
+          {(message.model === 'fathom-cyber-ultra-2.6' || (message.model && message.model.includes('cyber'))) && (
+            <span className="inline-flex items-center gap-1.5 text-[10.5px] font-mono font-medium px-2 py-0.5 rounded bg-purple-500/10 text-purple-200 border border-purple-500/25 select-none shadow-sm">
+              <Shield className="w-3.5 h-3.5 text-purple-300 shrink-0" />
+              <span>Fathom Cyber Ultra 2.6</span>
+            </span>
+          )}
+          {(message.model === 'fathom-quant-3' || (!message.model && !isMedia && message.model !== 'fathom-its-1' && !message.model?.includes('cyber') && !message.model?.includes('search'))) && (
             <span className="inline-flex items-center gap-1.5 text-[10.5px] font-mono font-medium px-2 py-0.5 rounded bg-white/[0.04] text-zinc-200 border border-white/[0.09] select-none">
               <Quant3PerfectionIcon size={12} className="text-zinc-300" />
               <span>Fathom Quant 3</span>
@@ -2019,14 +2049,16 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
               Matany MAX
             </span>
           )}
-          {(message.model === 'fathom-search' || message.model?.includes('search')) && (
-            <span className="text-[10px] font-mono font-bold text-emerald-300/90 tracking-wide px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
-              Fathom Search
+          {(message.model === 'fathom-search' || (message.model && message.model.includes('search'))) && (
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-emerald-300/90 tracking-wide px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 select-none">
+              <Globe className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Fathom Search</span>
             </span>
           )}
           {isMedia && (
-            <span className="text-[10px] font-mono font-bold text-violet-300/90 tracking-wide px-1.5 py-0.5 rounded bg-violet-500/10 border border-violet-500/20">
-              Fathom Spark
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-violet-300/90 tracking-wide px-1.5 py-0.5 rounded bg-violet-500/10 border border-violet-500/20 select-none">
+              <Sparkles className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+              <span>Fathom Spark</span>
             </span>
           )}
 
@@ -2044,6 +2076,8 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
             isMatany={message.isMatany}
             isTimeIntent={isTimeIntent}
             activeFeatures={activeFeatures}
+            activeMcps={(message as any).activeMcps}
+            previousUserPrompt={previousUserPrompt}
           />
         )}
 
@@ -2323,6 +2357,16 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                 <ItsProgressBadge
                   key={`its-badge-${message.id || 'current'}`}
                   data={extractedItsBadgeData}
+                />
+              </div>
+            )}
+
+            {/* Stable first-class Talabat Protocol MCP Card */}
+            {extractedTalabatData && (
+              <div className="w-full my-3">
+                <TalabatProtocolCard
+                  key={`talabat-card-${message.id || 'current'}`}
+                  data={extractedTalabatData}
                 />
               </div>
             )}

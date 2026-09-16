@@ -11,9 +11,9 @@ import {
   GuidedLearningProjection,
   FathomITSStudentProfile,
   TutorVoice,
-  FathomITSMessage
+  FathomITSMessage,
+  CURATED_TUTOR_VOICES
 } from '../types/fathomITS';
-import { CURATED_TUTOR_VOICES } from '../../api/elevenlabs';
 
 const STORAGE_PROFILE_KEY = 'fathom_its_profile_v1';
 const STORAGE_MESSAGES_KEY = 'fathom_its_messages_v1';

@@ -29,6 +29,7 @@ import {
   cleanMarkdownForClipboard
 } from '../../src/lib/utils';
 import { highlightCode } from '../../src/lib/syntaxHighlighter';
+import { parseReasoningMilestones } from '../../src/components/ui/chat-reasoning';
 
 /**
  * Deterministic prompt hash helper mirroring NeuralImageCard logic
@@ -572,6 +573,59 @@ func main() {
         requestedModel: 'fathom-quant-3'
       });
       expect(tunedQuestion.detectedIntent).not.toBe('SVG_VECTOR_STUDIO_AND_DESIGN');
+    });
+
+    await harness.it('Strict Disambiguation: coding, website, backend, and database queries NEVER trigger image or SVG generation', () => {
+      const codingPrompts = [
+        'صمم موقع متكامل بالرياكت مع Tailwind',
+        'صمم صفحة هبوط لتطبيق موبايل بـ HTML و CSS',
+        'اعمل لي كود بايثون لتنظيم ملفات مجلد التحميلات',
+        'حل مشكلة بطء استعلامات قاعدة بيانات PostgreSQL',
+        'اكتب دالة بلغة جافاسكريبت لحساب الضرائب',
+        'صلح الخطأ البرمجي في كود الـ API',
+        'اريد كود backend لرفع الملفات إلى S3'
+      ];
+
+      for (const prompt of codingPrompts) {
+        const tuned = DynamicParameterTuner.tune({
+          userPrompt: prompt,
+          requestedModel: 'fathom-quant-3'
+        });
+        expect(tuned.detectedIntent).not.toBe('NEURAL_IMAGE_STUDIO_AND_PROCESSING');
+        expect(tuned.detectedIntent).not.toBe('SVG_VECTOR_STUDIO_AND_DESIGN');
+      }
+    });
+
+    await harness.it('Active MCP Reasoning Milestones: correctly identifies and surfaces active MCP protocols in reasoning steps', () => {
+      const milestones = parseReasoningMilestones(
+        'جاري فحص الطلب واستدعاء الأدوات المطلوبة',
+        true,
+        false,
+        false,
+        false,
+        [],
+        ['talabat', 'github', 'linear', 'brave'],
+        'أريد بيتزا من طلبات ومراجعة مستودع كود'
+      );
+
+      const mcpTypes = milestones.filter(m => m.specialType === 'mcp');
+      expect(mcpTypes.length).toBe(4);
+
+      const talabatStep = milestones.find(m => m.mcpName === 'talabat');
+      expect(Boolean(talabatStep)).toBe(true);
+      expect(talabatStep?.title).toContain('طلبات');
+
+      const githubStep = milestones.find(m => m.mcpName === 'github');
+      expect(Boolean(githubStep)).toBe(true);
+      expect(githubStep?.title).toContain('GitHub');
+
+      const linearStep = milestones.find(m => m.mcpName === 'linear');
+      expect(Boolean(linearStep)).toBe(true);
+      expect(linearStep?.title).toContain('Linear');
+
+      const braveStep = milestones.find(m => m.mcpName === 'brave');
+      expect(Boolean(braveStep)).toBe(true);
+      expect(braveStep?.title).toContain('Web Search');
     });
 
     await harness.it('Ultra-Wide & Panoramic Aspect Engine: preserves 21:9 and 32:9 ratios without clipping or cropping', () => {

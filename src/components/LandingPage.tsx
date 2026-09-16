@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, ShieldOff, Eye, Camera, ShieldCheck, ArrowLeft, MessageSquarePlus, Zap, Lock, MessageSquare, CreditCard, Activity, User as UserIcon } from 'lucide-react';
+import { Sparkles, ShieldOff, Eye, Camera, ShieldCheck, ArrowLeft, MessageSquarePlus, Zap, Lock, MessageSquare, CreditCard, Activity, User as UserIcon, GraduationCap } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
 import { motion } from 'framer-motion';
 
@@ -238,29 +238,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
             </motion.div>
 
-            {/* Card 4: Fathom Quant 3 */}
+            {/* Card 4: Fathom ITS 1 */}
             <motion.div
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 450, damping: 25 }}
-              onClick={() => onSelectPreset('قدم لي تحليلاً فلسفياً معمقاً لأثر الذكاء الاصطناعي على تطور المعرفة الإنسانية بأسلوب بليغ.')}
+              onClick={() => onSelectPreset('ابدأ معي جلسة تقييم وتعلّم متقدمة للغة الإنجليزية وفق معايير CEFR مع توجيه لغوي دقيق.')}
               className="p-4 sm:p-5 rounded-2xl bg-zinc-900/40 border border-white/[0.08] hover:border-white/20 transition-all cursor-pointer flex flex-col justify-between group min-h-[190px] sm:min-h-[230px] select-none shadow-sm"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="size-9 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-zinc-200">
-                  <Activity className="w-4 h-4" />
+                  <GraduationCap className="w-4 h-4" />
                 </div>
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-white/[0.05] text-zinc-300 border border-white/[0.08]">
-                  FATHOM QUANT 3
+                  FATHOM ITS 1
                 </span>
               </div>
 
               <div>
                 <h3 className="text-sm sm:text-base font-bold text-white mb-1 group-hover:text-zinc-200 transition-colors font-sans">
-                  المعالجة اللغوية البليغة
+                  التعليم الذكي والتدريب اللغوي
                 </h3>
                 <p className="text-xs text-zinc-400 leading-relaxed font-sans line-clamp-2 sm:line-clamp-3">
-                  توليد نصوص فلسفية، صياغة إبداعية، وحوار فكري رصين باللغة العربية الفصحى المعاصرة.
+                  منظومة تعليم تفاعلية مستقلة بنظام CEFR المعياري، تصحيح دقيق للقواعد، وتوجيه بيداغوجي وتكامل صوتي.
                 </p>
               </div>
 

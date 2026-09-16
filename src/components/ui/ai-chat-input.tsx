@@ -32,7 +32,12 @@ import {
   FileSearch,
   Loader2,
   Check,
-  AlertCircle
+  AlertCircle,
+  ShoppingBag,
+  GitBranch,
+  Kanban,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { ModelType, MediaType } from "@/types";
 import { classifyFileType, formatFileSize, formatMediaDuration, extractVideoClientMetadata, extractAudioClientMetadata, extractTextClientMetadata, extractVideoKeyframes } from "@/lib/mediaExtractor";
@@ -73,6 +78,10 @@ export interface PromptInputProps {
       targetUrl?: string;
       targetUrls?: string[];
       deepSearch?: boolean;
+      isTalabatActive?: boolean;
+      isGitHubMcpActive?: boolean;
+      isLinearMcpActive?: boolean;
+      isBraveMcpActive?: boolean;
       preloadedKeyframes?: Record<string, string[]>;
     }
   ) => void;
@@ -90,6 +99,14 @@ export interface PromptInputProps {
   onToggleDeepSearch?: () => void;
   activeModel?: ModelType;
   onSelectModel?: (model: ModelType) => void;
+  isTalabatActive?: boolean;
+  onToggleTalabat?: () => void;
+  isGitHubMcpActive?: boolean;
+  onToggleGitHubMcp?: () => void;
+  isLinearMcpActive?: boolean;
+  onToggleLinearMcp?: () => void;
+  isBraveMcpActive?: boolean;
+  onToggleBraveMcp?: () => void;
 }
 
 // ----------------------------------------------------------------------
@@ -222,15 +239,71 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
       onToggleDeepSearch,
       activeModel = 'fathom-quant-3',
       onSelectModel,
+      isTalabatActive: externalTalabatActive,
+      onToggleTalabat,
+      isGitHubMcpActive: externalGitHubMcpActive,
+      onToggleGitHubMcp,
+      isLinearMcpActive: externalLinearMcpActive,
+      onToggleLinearMcp,
+      isBraveMcpActive: externalBraveMcpActive,
+      onToggleBraveMcp,
     },
     ref
   ) => {
     const [localValue, setLocalValue] = useState(defaultValue);
+    const [internalTalabatActive, setInternalTalabatActive] = useState(false);
+    const isTalabatActive = externalTalabatActive !== undefined ? externalTalabatActive : internalTalabatActive;
+
+    const [internalGitHubMcpActive, setInternalGitHubMcpActive] = useState(false);
+    const isGitHubMcpActive = externalGitHubMcpActive !== undefined ? externalGitHubMcpActive : internalGitHubMcpActive;
+
+    const [internalLinearMcpActive, setInternalLinearMcpActive] = useState(false);
+    const isLinearMcpActive = externalLinearMcpActive !== undefined ? externalLinearMcpActive : internalLinearMcpActive;
+
+    const [internalBraveMcpActive, setInternalBraveMcpActive] = useState(false);
+    const isBraveMcpActive = externalBraveMcpActive !== undefined ? externalBraveMcpActive : internalBraveMcpActive;
+
+    const toggleTalabat = useCallback(() => {
+      if (onToggleTalabat) {
+        onToggleTalabat();
+      } else {
+        setInternalTalabatActive(prev => !prev);
+      }
+    }, [onToggleTalabat]);
+
+    const toggleGitHubMcp = useCallback(() => {
+      if (onToggleGitHubMcp) {
+        onToggleGitHubMcp();
+      } else {
+        setInternalGitHubMcpActive(prev => !prev);
+      }
+    }, [onToggleGitHubMcp]);
+
+    const toggleLinearMcp = useCallback(() => {
+      if (onToggleLinearMcp) {
+        onToggleLinearMcp();
+      } else {
+        setInternalLinearMcpActive(prev => !prev);
+      }
+    }, [onToggleLinearMcp]);
+
+    const toggleBraveMcp = useCallback(() => {
+      if (onToggleBraveMcp) {
+        onToggleBraveMcp();
+      } else {
+        setInternalBraveMcpActive(prev => !prev);
+      }
+    }, [onToggleBraveMcp]);
+
+    const activeProtocolsCount = (isTalabatActive ? 1 : 0) + (isGitHubMcpActive ? 1 : 0) + (isLinearMcpActive ? 1 : 0) + (isBraveMcpActive ? 1 : 0);
+    const hasActiveProtocol = activeProtocolsCount > 0;
+
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [activeAttachment, setActiveAttachment] = useState<Attachment | null>(null);
     const [forensicModalSrc, setForensicModalSrc] = useState<string | File | Blob | null>(null);
     const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
     const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+    const [actionsMenuView, setActionsMenuView] = useState<'main' | 'protocols'>('main');
     const [isTargetUrlBarOpen, setIsTargetUrlBarOpen] = useState(false);
     const [cyberInputUrl, setCyberInputUrl] = useState('');
     const [attachedUrls, setAttachedUrls] = useState<string[]>([]);
@@ -315,11 +388,9 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
           const combined = [...prev, ...newOnes].slice(0, 5);
           return combined;
         });
-        setInternalModel('fathom-quant-3');
-        onSelectModel?.('fathom-quant-3');
         setCyberInputUrl('');
       }
-    }, [showUrlLimitToast, onSelectModel]);
+    }, [showUrlLimitToast]);
 
     const triggerFileInput = useCallback((acceptType?: 'all' | 'video' | 'audio' | 'image' | 'doc') => {
       if (!fileInputRef.current) return;
@@ -351,8 +422,6 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
               }
               return [...prev, ...newOnes].slice(0, 5);
             });
-            setInternalModel('fathom-quant-3');
-            onSelectModel?.('fathom-quant-3');
 
             const remainingClean = extracted.remainingText.trim();
             if (!isControlled) setLocalValue(remainingClean);
@@ -364,7 +433,7 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
         if (!isControlled) setLocalValue(val);
         onChange?.(val);
       },
-      [isControlled, onChange, onSelectModel, showUrlLimitToast]
+      [isControlled, onChange, showUrlLimitToast]
     );
 
     // Helper to convert any File to a persistent Attachment with real natural dimensions & metadata
@@ -565,10 +634,6 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
           return combined;
         });
 
-        // Always activate Fathom Quant 3 URL Mode on link detection
-        setInternalModel('fathom-quant-3');
-        onSelectModel?.('fathom-quant-3');
-
         if (extracted.remainingText && extracted.remainingText.trim()) {
           const existingValue = value.trim();
           const nextVal = existingValue ? `${existingValue} ${extracted.remainingText.trim()}` : extracted.remainingText.trim();
@@ -580,7 +645,7 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
         }
         return;
       }
-    }, [value, isControlled, onChange, processFileToAttachment, showUrlLimitToast, onSelectModel]);
+    }, [value, isControlled, onChange, processFileToAttachment, showUrlLimitToast]);
 
     // Global paste listener so pasting images works from anywhere on page without duplicating textarea paste
     useEffect(() => {
@@ -644,10 +709,13 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
       }
 
       // Sovereign routing: Fathom Quant 3 is the SOLE engine for photorealistic image generation and SVG vector design
-      const isImageOrSvgIntent = /(?:ارسم|صمم|توليد|ولد|رسم|انشئ|أنشئ|اعمل|سوي)\s+(?:لي\s+)?(?:صورة|رسمة|لوحة|تصميم|بورتريه|خلفية|رمز|شعار|لوجو|ايقونة|أيقونة|svg)/i.test(effectivePrompt) ||
+      const isCodeOrTextPrompt = /(?:كود|برمجة|دالة|ملف|موقع|صفحة|واجهة|html|css|js|ts|python|react|api|bug|error|خطأ|مشكلة|قاعدة|database|شرح|تقرير|خطة|جدول)/i.test(effectivePrompt);
+      const isImageOrSvgIntent = !isCodeOrTextPrompt && (
+        /(?:ارسم|صمم|توليد|ولد|رسم|انشئ|أنشئ)\s+(?:لي\s+)?(?:صورة|رسمة|لوحة|بورتريه|خلفية|شعار|لوجو|svg)/i.test(effectivePrompt) ||
         /\b(?:صورة|رسمة|بورتريه|شعار|لوجو|لوحة)\s+(?:فوتوغرافية|واقعية|فنية|سينمائية|متجهية|svg)\b/i.test(effectivePrompt) ||
-        /\b(?:generate|draw|paint|render|create|design)\s+(?:an?\s+)?(?:image|picture|photo|portrait|artwork|wallpaper|svg|vector|logo|icon)\b/i.test(effectivePrompt) ||
-        /\b(?:svg\s+code|vector\s+graphics?|svg\s+icon)\b/i.test(effectivePrompt);
+        /\b(?:generate|draw|paint|render|create|design)\s+(?:an?\s+)?(?:image|picture|photo|portrait|artwork|wallpaper|svg|vector|logo)\b/i.test(effectivePrompt) ||
+        /\b(?:svg\s+code|vector\s+graphics?|svg\s+icon)\b/i.test(effectivePrompt)
+      );
 
       if (isImageOrSvgIntent && internalModel !== 'fathom-quant-3') {
         setInternalModel('fathom-quant-3');
@@ -680,6 +748,10 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
         targetUrl: allUrlsToSubmit[0] || undefined,
         targetUrls: allUrlsToSubmit.length > 0 ? allUrlsToSubmit : undefined,
         deepSearch: isDeepSearchEffective || internalModel === 'fathom-search',
+        isTalabatActive,
+        isGitHubMcpActive,
+        isLinearMcpActive,
+        isBraveMcpActive,
         preloadedKeyframes,
       });
 
@@ -908,6 +980,17 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
           sheen: 'bg-gradient-to-r from-transparent via-rose-500 to-transparent',
         };
       }
+      if (isTalabatActive) {
+        // Talabat MCP Protocol - Clean Flat Matte, ZERO Glowing
+        return {
+          strokeRing: 'stroke-zinc-600',
+          textPercent: 'text-zinc-300',
+          textAccent: 'text-orange-400',
+          bgLoader: 'bg-zinc-900 border-zinc-800 text-zinc-300',
+          spinnerColor: 'text-orange-400',
+          sheen: 'opacity-0',
+        };
+      }
       if (isVisionMode || hasAttachments) {
         // Fathom Cam - Emerald
         return {
@@ -1086,186 +1169,368 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
           <>
             <div
               className="fixed inset-0 z-40"
-              onClick={() => setIsActionsMenuOpen(false)}
+              onClick={() => {
+                setIsActionsMenuOpen(false);
+                setActionsMenuView('main');
+              }}
             />
             <div
               dir="rtl"
-              className="absolute bottom-full left-0 mb-3 w-[290px] sm:w-[310px] bg-[#09090b]/98 backdrop-blur-2xl rounded-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 text-right select-none border border-zinc-800 shadow-[0_20px_50px_rgba(0,0,0,0.95)]"
+              className="absolute bottom-full left-0 mb-3 w-[290px] sm:w-[310px] bg-[#09090b]/98 backdrop-blur-2xl rounded-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 text-right select-none border border-zinc-800 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="px-3 py-2 border-b border-white/[0.06] mb-1.5 flex items-center justify-between">
-                <span className="text-xs font-medium text-zinc-400">أدوات إضافية</span>
-              </div>
-
-              <div className="space-y-1">
-                {/* 1. Upload Image & Vision */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerFileInput('image');
-                    setIsActionsMenuOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/70 text-xs font-sans text-zinc-300 hover:text-white transition-all cursor-pointer text-right group border border-transparent hover:border-zinc-800/60"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="size-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 group-hover:text-emerald-300 shrink-0">
-                      <Camera className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-semibold text-xs text-white">رفع صورة وفحص بصري</span>
+              {actionsMenuView === 'main' ? (
+                <>
+                  <div className="px-3 py-2 border-b border-white/[0.06] mb-1.5 flex items-center justify-between">
+                    <span className="text-xs font-medium text-zinc-400 font-sans">أدوات إضافية</span>
                   </div>
-                </button>
 
-                {/* 2. Upload Video */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerFileInput('video');
-                    setIsActionsMenuOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/70 text-xs font-sans text-zinc-300 hover:text-white transition-all cursor-pointer text-right group border border-transparent hover:border-zinc-800/60"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="size-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-violet-400 group-hover:text-violet-300 shrink-0">
-                      <Video className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-semibold text-xs text-white">رفع فيديو</span>
+                  <div className="space-y-1">
+                    {/* 1. Upload Image & Vision */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        triggerFileInput('image');
+                        setIsActionsMenuOpen(false);
+                      }}
+                      className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/70 text-xs font-sans text-zinc-300 hover:text-white transition-all cursor-pointer text-right group border border-transparent hover:border-zinc-800/60"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 group-hover:text-emerald-300 shrink-0">
+                          <Camera className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="font-semibold text-xs text-white">رفع صورة وفحص بصري</span>
+                      </div>
+                    </button>
+
+                    {/* 2. Upload Video */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        triggerFileInput('video');
+                        setIsActionsMenuOpen(false);
+                      }}
+                      className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/70 text-xs font-sans text-zinc-300 hover:text-white transition-all cursor-pointer text-right group border border-transparent hover:border-zinc-800/60"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-violet-400 group-hover:text-violet-300 shrink-0">
+                          <Video className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="font-semibold text-xs text-white">رفع فيديو</span>
+                      </div>
+                    </button>
+
+                    {/* 3. Upload Audio */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        triggerFileInput('audio');
+                        setIsActionsMenuOpen(false);
+                      }}
+                      className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/70 text-xs font-sans text-zinc-300 hover:text-white transition-all cursor-pointer text-right group border border-transparent hover:border-zinc-800/60"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-violet-400 group-hover:text-violet-300 shrink-0">
+                          <Music className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="font-semibold text-xs text-white">رفع صوت أو تسجيل</span>
+                      </div>
+                    </button>
+
+                    {/* 4. Upload Documents & Code */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        triggerFileInput('doc');
+                        setIsActionsMenuOpen(false);
+                      }}
+                      className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/70 text-xs font-sans text-zinc-300 hover:text-white transition-all cursor-pointer text-right group border border-transparent hover:border-zinc-800/60"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-indigo-400 group-hover:text-indigo-300 shrink-0">
+                          <FileCode className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="font-semibold text-xs text-white">رفع مستند أو كود</span>
+                      </div>
+                    </button>
+
+                    {/* 5. Target URL Cyber Bar Trigger */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isCyberMode || attachedUrls.length > 0) {
+                          setAttachedUrls([]);
+                        }
+                        setIsTargetUrlBarOpen(true);
+                        setIsActionsMenuOpen(false);
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-between p-2 rounded-xl text-xs font-sans transition-all cursor-pointer text-right border",
+                        isCyberMode || attachedUrls.length > 0
+                          ? "bg-cyan-950/40 border-cyan-500/30 text-cyan-200"
+                          : "hover:bg-zinc-900/70 text-zinc-300 hover:text-white border-transparent hover:border-zinc-800/60"
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className={cn(
+                          "size-7 rounded-lg flex items-center justify-center shrink-0 border transition-all",
+                          isCyberMode || attachedUrls.length > 0
+                            ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-300"
+                            : "bg-zinc-900 border-zinc-800 text-cyan-400"
+                        )}>
+                          <Globe className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="font-semibold text-xs text-white">فحص واستطلاع رابط (URL)</span>
+                      </div>
+                      {attachedUrls.length > 0 && (
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border shrink-0 bg-cyan-500/20 border-cyan-500/40 text-cyan-300 font-bold">
+                          {attachedUrls.length} روابط
+                        </span>
+                      )}
+                    </button>
+
+                    {/* 6. Deep Search Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleDeepSearch();
+                        setIsActionsMenuOpen(false);
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-between p-2 rounded-xl text-xs font-sans transition-all cursor-pointer text-right border",
+                        isDeepSearchEffective
+                          ? "bg-emerald-950/40 border-emerald-500/30 text-emerald-200"
+                          : "hover:bg-zinc-900/70 text-zinc-300 hover:text-white border-transparent hover:border-zinc-800/60"
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className={cn(
+                          "size-7 rounded-lg flex items-center justify-center shrink-0 border transition-all",
+                          isDeepSearchEffective
+                            ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                            : "bg-zinc-900 border-zinc-800 text-emerald-400"
+                        )}>
+                          <Search className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="font-semibold text-xs text-white">البحث في الويب</span>
+                      </div>
+                      {isDeepSearchEffective && (
+                        <span className="size-2 rounded-full bg-emerald-400 shrink-0 ring-2 ring-emerald-400/20" />
+                      )}
+                    </button>
+
+                    <div className="my-1 border-t border-white/[0.06]" />
+
+                    {/* 7. Protocol Assistant Tools (Nested Sub-menu Trigger) */}
+                    <button
+                      type="button"
+                      onClick={() => setActionsMenuView('protocols')}
+                      className={cn(
+                        "w-full flex items-center justify-between p-2 rounded-xl text-xs font-sans transition-all cursor-pointer text-right border",
+                        hasActiveProtocol
+                          ? "bg-zinc-900 border-zinc-700 text-white"
+                          : "hover:bg-zinc-900/70 text-zinc-300 hover:text-white border-transparent hover:border-zinc-800/60"
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 shrink-0">
+                          <Cpu className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex flex-col text-right">
+                          <span className="font-semibold text-xs text-white">أدوات مساعدة ببروتوكول (MCP)</span>
+                          <span className="text-[10px] text-zinc-400 font-sans">
+                            {hasActiveProtocol ? `${activeProtocolsCount} بروتوكول نشط` : "بروتوكولات ذكية ومباشرة"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-zinc-400">
+                        {hasActiveProtocol && (
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-cyan-300 border border-zinc-700 font-bold">
+                            {activeProtocolsCount}
+                          </span>
+                        )}
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </div>
+                    </button>
+
+                    <div className="my-1 border-t border-white/[0.06]" />
+
+                    {/* 8. NSFW Off Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onToggleMatany?.();
+                        setIsActionsMenuOpen(false);
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-between p-2 rounded-xl text-xs font-sans transition-all cursor-pointer text-right border",
+                        isMatanyActive
+                          ? "bg-rose-950/40 border-rose-500/30 text-rose-200"
+                          : "hover:bg-zinc-900/70 text-zinc-300 hover:text-white border-transparent hover:border-zinc-800/60"
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className={cn(
+                          "size-7 rounded-lg flex items-center justify-center shrink-0 border transition-all",
+                          isMatanyActive
+                            ? "bg-rose-500/20 border-rose-500/40 text-rose-300"
+                            : "bg-zinc-900 border-zinc-800 text-rose-400"
+                        )}>
+                          <ShieldOff className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="font-semibold text-xs text-white">وضع NSFW Off</span>
+                      </div>
+                      {isMatanyActive && (
+                        <span className="size-2 rounded-full bg-rose-400 shrink-0 ring-2 ring-rose-400/20" />
+                      )}
+                    </button>
                   </div>
-                </button>
-
-                {/* 3. Upload Audio */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerFileInput('audio');
-                    setIsActionsMenuOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/70 text-xs font-sans text-zinc-300 hover:text-white transition-all cursor-pointer text-right group border border-transparent hover:border-zinc-800/60"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="size-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-violet-400 group-hover:text-violet-300 shrink-0">
-                      <Music className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-semibold text-xs text-white">رفع صوت أو تسجيل</span>
+                </>
+              ) : (
+                <>
+                  <div className="px-2 py-1.5 border-b border-white/[0.06] mb-1.5 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setActionsMenuView('main')}
+                      className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                      <span>الأدوات الإضافية</span>
+                    </button>
+                    <span className="text-[11px] font-bold text-white font-sans">أدوات مساعدة ببروتوكول (MCP)</span>
                   </div>
-                </button>
 
-                {/* 4. Upload Document / Code */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerFileInput('doc');
-                    setIsActionsMenuOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-zinc-900/70 text-xs font-sans text-zinc-300 hover:text-white transition-all cursor-pointer text-right group border border-transparent hover:border-zinc-800/60"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="size-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-zinc-200 shrink-0">
-                      <FileText className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-semibold text-xs text-white">رفع مستند أو كود</span>
+                  <div className="space-y-1">
+                    {/* 1. Talabat MCP Protocol Tool */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleTalabat();
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-between p-2 rounded-xl text-xs font-sans transition-all cursor-pointer text-right border",
+                        isTalabatActive
+                          ? "bg-zinc-900 border-zinc-700 text-white"
+                          : "hover:bg-zinc-900/70 text-zinc-300 hover:text-white border-transparent hover:border-zinc-800/60"
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-orange-400 shrink-0">
+                          <ShoppingBag className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex flex-col text-right">
+                          <span className="font-semibold text-xs text-white">طلبات Talabat MCP</span>
+                          <span className="text-[10px] text-zinc-400 font-sans">بحث وتوصيل وجبات ومارت مباشر</span>
+                        </div>
+                      </div>
+                      <span className={cn(
+                        "text-[10px] font-sans px-2 py-0.5 rounded border transition-colors",
+                        isTalabatActive
+                          ? "bg-white/10 text-orange-300 border-white/20 font-bold"
+                          : "bg-white/[0.05] text-zinc-400 border-white/10"
+                      )}>
+                        {isTalabatActive ? "مفعّل" : "تشغيل"}
+                      </span>
+                    </button>
+
+                    {/* 2. GitHub MCP Protocol Tool */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleGitHubMcp();
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-between p-2 rounded-xl text-xs font-sans transition-all cursor-pointer text-right border",
+                        isGitHubMcpActive
+                          ? "bg-zinc-900 border-zinc-700 text-white"
+                          : "hover:bg-zinc-900/70 text-zinc-300 hover:text-white border-transparent hover:border-zinc-800/60"
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-indigo-400 shrink-0">
+                          <GitBranch className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex flex-col text-right">
+                          <span className="font-semibold text-xs text-white">جيت هب GitHub MCP</span>
+                          <span className="text-[10px] text-zinc-400 font-sans">استعلام المستودعات والأكواد والـ PRs</span>
+                        </div>
+                      </div>
+                      <span className={cn(
+                        "text-[10px] font-sans px-2 py-0.5 rounded border transition-colors",
+                        isGitHubMcpActive
+                          ? "bg-white/10 text-indigo-300 border-white/20 font-bold"
+                          : "bg-white/[0.05] text-zinc-400 border-white/10"
+                      )}>
+                        {isGitHubMcpActive ? "مفعّل" : "تشغيل"}
+                      </span>
+                    </button>
+
+                    {/* 3. Linear MCP Protocol Tool */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleLinearMcp();
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-between p-2 rounded-xl text-xs font-sans transition-all cursor-pointer text-right border",
+                        isLinearMcpActive
+                          ? "bg-zinc-900 border-zinc-700 text-white"
+                          : "hover:bg-zinc-900/70 text-zinc-300 hover:text-white border-transparent hover:border-zinc-800/60"
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-emerald-400 shrink-0">
+                          <Kanban className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex flex-col text-right">
+                          <span className="font-semibold text-xs text-white">لينيار Linear MCP</span>
+                          <span className="text-[10px] text-zinc-400 font-sans">تتبع الـ Issues والمهام والمشاريع</span>
+                        </div>
+                      </div>
+                      <span className={cn(
+                        "text-[10px] font-sans px-2 py-0.5 rounded border transition-colors",
+                        isLinearMcpActive
+                          ? "bg-white/10 text-emerald-300 border-white/20 font-bold"
+                          : "bg-white/[0.05] text-zinc-400 border-white/10"
+                      )}>
+                        {isLinearMcpActive ? "مفعّل" : "تشغيل"}
+                      </span>
+                    </button>
+
+                    {/* 4. Brave Search MCP Protocol Tool */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toggleBraveMcp();
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-between p-2 rounded-xl text-xs font-sans transition-all cursor-pointer text-right border",
+                        isBraveMcpActive
+                          ? "bg-zinc-900 border-zinc-700 text-white"
+                          : "hover:bg-zinc-900/70 text-zinc-300 hover:text-white border-transparent hover:border-zinc-800/60"
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="size-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-cyan-400 shrink-0">
+                          <Globe className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex flex-col text-right">
+                          <span className="font-semibold text-xs text-white">البحث في الويب (Web Search MCP)</span>
+                          <span className="text-[10px] text-zinc-400 font-sans">استعلام ذكي واستخراج محتوى الويب الحي بروتوكولياً</span>
+                        </div>
+                      </div>
+                      <span className={cn(
+                        "text-[10px] font-sans px-2 py-0.5 rounded border transition-colors",
+                        isBraveMcpActive
+                          ? "bg-white/10 text-cyan-300 border-white/20 font-bold"
+                          : "bg-white/[0.05] text-zinc-400 border-white/10"
+                      )}>
+                        {isBraveMcpActive ? "مفعّل" : "تشغيل"}
+                      </span>
+                    </button>
                   </div>
-                </button>
-
-                <div className="my-1 border-t border-white/[0.06]" />
-
-                {/* 5. Target URL Scanner */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!isCyberMode) {
-                      setInternalModel('fathom-quant-3');
-                      onSelectModel?.('fathom-quant-3');
-                    }
-                    setIsTargetUrlBarOpen(true);
-                    setIsActionsMenuOpen(false);
-                  }}
-                  className={cn(
-                    "w-full flex items-center justify-between p-2 rounded-xl text-xs font-sans transition-all cursor-pointer text-right border",
-                    isCyberMode || attachedUrls.length > 0
-                      ? "bg-cyan-950/40 border-cyan-500/30 text-cyan-200"
-                      : "hover:bg-zinc-900/70 text-zinc-300 hover:text-white border-transparent hover:border-zinc-800/60"
-                  )}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className={cn(
-                      "size-7 rounded-lg flex items-center justify-center shrink-0 border transition-all",
-                      isCyberMode || attachedUrls.length > 0
-                        ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-300"
-                        : "bg-zinc-900 border-zinc-800 text-cyan-400"
-                    )}>
-                      <Globe className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-semibold text-xs text-white">فحص واستطلاع رابط (URL)</span>
-                  </div>
-                  {attachedUrls.length > 0 && (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border shrink-0 bg-cyan-500/20 border-cyan-500/40 text-cyan-300 font-bold">
-                      {attachedUrls.length} روابط
-                    </span>
-                  )}
-                </button>
-
-                {/* 6. Deep Search Toggle */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    toggleDeepSearch();
-                    setIsActionsMenuOpen(false);
-                  }}
-                  className={cn(
-                    "w-full flex items-center justify-between p-2 rounded-xl text-xs font-sans transition-all cursor-pointer text-right border",
-                    isDeepSearchEffective
-                      ? "bg-emerald-950/40 border-emerald-500/30 text-emerald-200"
-                      : "hover:bg-zinc-900/70 text-zinc-300 hover:text-white border-transparent hover:border-zinc-800/60"
-                  )}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className={cn(
-                      "size-7 rounded-lg flex items-center justify-center shrink-0 border transition-all",
-                      isDeepSearchEffective
-                        ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
-                        : "bg-zinc-900 border-zinc-800 text-emerald-400"
-                    )}>
-                      <Search className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-semibold text-xs text-white">البحث في الويب</span>
-                  </div>
-                  {isDeepSearchEffective && (
-                    <span className="size-2 rounded-full bg-emerald-400 shrink-0 ring-2 ring-emerald-400/20" />
-                  )}
-                </button>
-
-                <div className="my-1 border-t border-white/[0.06]" />
-
-                {/* 7. NSFW Off Toggle */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    onToggleMatany?.();
-                    setIsActionsMenuOpen(false);
-                  }}
-                  className={cn(
-                    "w-full flex items-center justify-between p-2 rounded-xl text-xs font-sans transition-all cursor-pointer text-right border",
-                    isMatanyActive
-                      ? "bg-rose-950/40 border-rose-500/30 text-rose-200"
-                      : "hover:bg-zinc-900/70 text-zinc-300 hover:text-white border-transparent hover:border-zinc-800/60"
-                  )}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className={cn(
-                      "size-7 rounded-lg flex items-center justify-center shrink-0 border transition-all",
-                      isMatanyActive
-                        ? "bg-rose-500/20 border-rose-500/40 text-rose-300"
-                        : "bg-zinc-900 border-zinc-800 text-rose-400"
-                    )}>
-                      <ShieldOff className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="font-semibold text-xs text-white">وضع NSFW Off</span>
-                  </div>
-                  {isMatanyActive && (
-                    <span className="size-2 rounded-full bg-rose-400 shrink-0 ring-2 ring-rose-400/20" />
-                  )}
-                </button>
-              </div>
+                </>
+              )}
             </div>
           </>
         )}
@@ -1636,6 +1901,106 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
               )}
             </AnimatePresence>
 
+            {/* Active MCP Protocols Bar - Clean Flat Matte, ZERO Glowing */}
+            <AnimatePresence initial={false}>
+              {hasActiveProtocol && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, y: -6 }}
+                  animate={{ opacity: 1, height: 'auto', y: 0 }}
+                  exit={{ opacity: 0, height: 0, y: -6 }}
+                  transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-2 sm:p-2.5 border-b border-white/[0.08] bg-[#0c0c10] rounded-t-3xl flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4">
+                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                      <span className="text-[11px] font-medium text-zinc-400 font-sans ml-1">
+                        البروتوكولات النشطة:
+                      </span>
+
+                      {isTalabatActive && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-zinc-900 border border-white/10 text-xs text-zinc-100">
+                          <ShoppingBag className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                          <span className="font-semibold text-xs">طلبات Talabat MCP</span>
+                          <span className="text-[9px] px-1 rounded bg-zinc-800 text-orange-300 border border-white/10">طلبات</span>
+                          <button
+                            type="button"
+                            onClick={toggleTalabat}
+                            className="size-4 rounded hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center ml-0.5 transition-colors cursor-pointer"
+                            title="إلغاء وضع طلبات"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+
+                      {isGitHubMcpActive && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-zinc-900 border border-white/10 text-xs text-zinc-100">
+                          <GitBranch className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                          <span className="font-semibold text-xs">جيت هب GitHub MCP</span>
+                          <span className="text-[9px] px-1 rounded bg-zinc-800 text-indigo-300 border border-white/10">كود</span>
+                          <button
+                            type="button"
+                            onClick={toggleGitHubMcp}
+                            className="size-4 rounded hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center ml-0.5 transition-colors cursor-pointer"
+                            title="إلغاء وضع GitHub MCP"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+
+                      {isLinearMcpActive && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-zinc-900 border border-white/10 text-xs text-zinc-100">
+                          <Kanban className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span className="font-semibold text-xs">لينيار Linear MCP</span>
+                          <span className="text-[9px] px-1 rounded bg-zinc-800 text-emerald-300 border border-white/10">مهام</span>
+                          <button
+                            type="button"
+                            onClick={toggleLinearMcp}
+                            className="size-4 rounded hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center ml-0.5 transition-colors cursor-pointer"
+                            title="إلغاء وضع Linear MCP"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+
+                      {isBraveMcpActive && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-zinc-900 border border-white/10 text-xs text-zinc-100">
+                          <Globe className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                          <span className="font-semibold text-xs">بحث Brave MCP</span>
+                          <span className="text-[9px] px-1 rounded bg-zinc-800 text-cyan-300 border border-white/10">ويب</span>
+                          <button
+                            type="button"
+                            onClick={toggleBraveMcp}
+                            className="size-4 rounded hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center ml-0.5 transition-colors cursor-pointer"
+                            title="إلغاء وضع Brave MCP"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {activeProtocolsCount > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isTalabatActive) toggleTalabat();
+                          if (isGitHubMcpActive) toggleGitHubMcp();
+                          if (isLinearMcpActive) toggleLinearMcp();
+                          if (isBraveMcpActive) toggleBraveMcp();
+                        }}
+                        className="text-[10px] text-zinc-400 hover:text-rose-300 transition-colors font-sans px-2 py-1 rounded hover:bg-white/[0.04] cursor-pointer shrink-0"
+                      >
+                        إلغاء الكل
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
           {/* Main Text Area Row */}
           <div className="flex items-end gap-2.5 px-3 sm:px-4 pt-2.5 sm:pt-3 pb-2">
             
@@ -1668,6 +2033,8 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                 placeholder={
                   activeFusion
                     ? activeFusion.placeholder
+                    : isTalabatActive
+                    ? "اطلب وجبة، مطعم أو منتج عبر بروتوكول طلبات Talabat MCP... (مثال: عايز بيتزا بيبروني من دومينوز)"
                     : (isDeepSearchEffective || internalModel === 'fathom-search')
                     ? "ابحث واستقصِ بذكاء عبر Fathom Search (ويب، سياق، ذاكرة، وفحص وسائط)..."
                     : isVisionMode || hasAttachments
@@ -1684,6 +2051,8 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                   "w-full bg-transparent text-[15px] sm:text-base leading-relaxed resize-none outline-none focus:outline-none focus:ring-0 focus-visible:outline-none border-0 focus:border-0 shadow-none focus:shadow-none font-sans max-h-44 min-h-[38px] py-1 px-1 smooth-scroll no-scrollbar transition-colors",
                   activeFusion
                     ? activeFusion.textColor
+                    : isTalabatActive
+                    ? "text-orange-50 placeholder:text-orange-300/50 selection:bg-orange-500/40"
                     : isMediaMode || hasNonImageMedia
                     ? "text-violet-50 placeholder:text-violet-300/50 selection:bg-violet-500/40"
                     : isDeepSearchEffective
@@ -1715,6 +2084,8 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                     : hasValue
                     ? activeFusion
                       ? `${activeFusion.sendGradient} font-bold hover:scale-105 shadow-xl`
+                      : isTalabatActive
+                      ? "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold hover:scale-105 shadow-orange-500/30"
                       : isMediaMode || hasNonImageMedia
                       ? "bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 hover:from-violet-400 hover:to-fuchsia-400 text-white font-bold hover:scale-105 shadow-violet-500/30"
                       : isDeepSearchEffective
@@ -1737,7 +2108,7 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                 ) : isAnyAttachmentProcessing ? (
                   <Loader2 className={cn("w-4 h-4 animate-spin", currentThemeColor.spinnerColor)} />
                 ) : (
-                  <ArrowUp className={cn("w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]", (isMediaMode || hasNonImageMedia || isMatanyActive) ? "text-white" : (isCyberMode || isDeepSearchEffective || hasAttachments || Boolean(activeFusion)) ? "text-black" : hasValue ? "text-zinc-950" : "text-zinc-600")} />
+                  <ArrowUp className={cn("w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]", (isMediaMode || hasNonImageMedia || isMatanyActive || isTalabatActive) ? "text-white" : (isCyberMode || isDeepSearchEffective || hasAttachments || Boolean(activeFusion)) ? "text-black" : hasValue ? "text-zinc-950" : "text-zinc-600")} />
                 )}
               </button>
             </div>
@@ -1765,7 +2136,7 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
               </button>
             </div>
 
-            {/* Left Group: Icon-Only Status Badges & 3-Dots Actions Menu */}
+            {/* Left Group: Status Indicators, Dedicated Protocol Tools Tab, & 3-Dots Actions Menu */}
             <div className="flex items-center gap-1.5 mr-auto shrink-0">
               
               {/* NSFW Active Icon Indicator (Clickable to cancel/toggle) */}
@@ -1792,12 +2163,13 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                 </button>
               )}
 
-              {/* 3-Dots Action Button (Clean and direct without annoying tooltips) */}
+              {/* 3-Dots Action Button (أدوات إضافية) */}
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsActionsMenuOpen(!isActionsMenuOpen);
+                  setActionsMenuView('main');
                 }}
                 title="أدوات إضافية"
                 className={cn(

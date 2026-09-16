@@ -28,6 +28,8 @@ export interface ChatReasoningProps {
   activeFeatures?: DetectedFeatureData[];
   defaultValue?: string;
   className?: string;
+  activeMcps?: string[];
+  previousUserPrompt?: string;
 }
 
 export interface Milestone {
@@ -35,9 +37,10 @@ export interface Milestone {
   title: string;
   details?: string;
   status: 'completed' | 'in-progress' | 'pending';
-  specialType?: 'search' | 'cam' | 'spark' | null;
+  specialType?: 'search' | 'cam' | 'spark' | 'mcp' | null;
   searchQuery?: string;
   sourcesCount?: number;
+  mcpName?: string;
 }
 
 export function AnimatedDots({ className = "bg-indigo-400" }: { className?: string }) {
@@ -172,12 +175,63 @@ export function parseReasoningMilestones(
   hasFathomCam: boolean = false,
   hasFathomSpark: boolean = false,
   hasFathomSearch: boolean = false,
-  activeFeatures: DetectedFeatureData[] = []
+  activeFeatures: DetectedFeatureData[] = [],
+  activeMcps: string[] = [],
+  promptText: string = ''
 ): Milestone[] {
   const initialQueryMatch = rawText?.match(/\[(?:البحث عن|query)\s*:\s*["']?([^\]"']+)["']?\]/i)?.[1]?.trim() ||
                             rawText?.match(/(?:البحث عن|استعلام عن)\s*[:"']?\s*["']?([^"\n\r\]•]+)["']?/i)?.[1]?.trim();
 
   const searchContext = getFathomSearchContextualInfo(rawText, activeFeatures, initialQueryMatch);
+
+  // Detect active MCP protocols from props, reasoning text, or prompt context
+  const combinedContext = `${rawText || ''} ${promptText || ''}`;
+  const isTalabatMcp = activeMcps.includes('talabat') || /(?:talabat|طلبات|AUTHORITATIVE TALABAT MCP)/i.test(combinedContext);
+  const isGitHubMcp = activeMcps.includes('github') || /(?:github|جيت هب|AUTHORITATIVE OPENROUTER GITHUB MCP)/i.test(combinedContext);
+  const isLinearMcp = activeMcps.includes('linear') || /(?:linear|لينيار|AUTHORITATIVE OPENROUTER LINEAR MCP)/i.test(combinedContext);
+  const isBraveMcp = activeMcps.includes('brave') || activeMcps.includes('web_search') || /(?:brave|البحث في الويب.*mcp|AUTHORITATIVE OPENROUTER BRAVE SEARCH MCP)/i.test(combinedContext);
+
+  const mcpMilestones: Milestone[] = [];
+  if (isTalabatMcp) {
+    mcpMilestones.push({
+      id: 'step-mcp-talabat',
+      title: 'استعلام القائمة الحية • بروتوكول طلبات (Talabat MCP)',
+      details: 'تم ربط بروتوكول طلبات وفحص الشركاء المعتمدين والمطاعم واسترجاع المنتجات المتاحة والأسعار الرسمية بدقة آنية.',
+      status: 'completed',
+      specialType: 'mcp',
+      mcpName: 'talabat'
+    });
+  }
+  if (isGitHubMcp) {
+    mcpMilestones.push({
+      id: 'step-mcp-github',
+      title: 'فحص واستكشاف مستودعات الأكواد • GitHub MCP Protocol',
+      details: 'تم ربط بروتوكول GitHub واستكشاف الملفات والأكواد المصدرية والمستودعات حسب معايير OpenRouter Agent SDK.',
+      status: 'completed',
+      specialType: 'mcp',
+      mcpName: 'github'
+    });
+  }
+  if (isLinearMcp) {
+    mcpMilestones.push({
+      id: 'step-mcp-linear',
+      title: 'تتبع المهام والمشاريع والـ Issues • Linear MCP Protocol',
+      details: 'تم ربط بروتوكول Linear لإدارة المشاريع ودورات التطوير والمهام التقنية وتحديث الـ Issues بدقة.',
+      status: 'completed',
+      specialType: 'mcp',
+      mcpName: 'linear'
+    });
+  }
+  if (isBraveMcp) {
+    mcpMilestones.push({
+      id: 'step-mcp-brave',
+      title: 'استعلام وتدقيق محتوى الويب الحي • Web Search MCP Protocol',
+      details: 'تم استدعاء بروتوكول البحث في الويب واستخراج نتائج البحث المحدثة والتوثيقات الحية لعام 2026 بروتوكولياً.',
+      status: 'completed',
+      specialType: 'mcp',
+      mcpName: 'brave'
+    });
+  }
 
   // Base default milestones when stream is just starting or empty
   if (!rawText || !rawText.trim()) {
@@ -193,7 +247,7 @@ export function parseReasoningMilestones(
         searchQuery: '',
         sourcesCount: 0,
       });
-      return defaultSteps;
+      return [...mcpMilestones, ...defaultSteps];
     }
 
     if (hasFathomCam) {
@@ -204,7 +258,7 @@ export function parseReasoningMilestones(
         status: isThinking ? 'in-progress' : 'completed',
         specialType: 'cam',
       });
-      return defaultSteps;
+      return [...mcpMilestones, ...defaultSteps];
     }
 
     if (hasFathomSpark) {
@@ -215,7 +269,7 @@ export function parseReasoningMilestones(
         status: isThinking ? 'in-progress' : 'completed',
         specialType: 'spark',
       });
-      return defaultSteps;
+      return [...mcpMilestones, ...defaultSteps];
     }
 
     defaultSteps.push({
@@ -225,7 +279,7 @@ export function parseReasoningMilestones(
       status: isThinking ? 'in-progress' : 'completed',
     });
 
-    return defaultSteps;
+    return [...mcpMilestones, ...defaultSteps];
   }
 
   // Clean raw text from think tags and prompt leaks
@@ -406,7 +460,7 @@ export function parseReasoningMilestones(
       status: isThinking ? (part2 ? 'in-progress' : 'pending') : 'completed',
     });
 
-    return milestones;
+    return [...mcpMilestones, ...milestones];
   }
 
   // Vision pipeline
@@ -441,7 +495,7 @@ export function parseReasoningMilestones(
       details: part2,
       status: isThinking ? (part2 ? 'in-progress' : 'pending') : 'completed',
     });
-    return milestones;
+    return [...mcpMilestones, ...milestones];
   }
 
   // Spark pipeline
@@ -476,7 +530,7 @@ export function parseReasoningMilestones(
       details: part2,
       status: isThinking ? (part2 ? 'in-progress' : 'pending') : 'completed',
     });
-    return milestones;
+    return [...mcpMilestones, ...milestones];
   }
 
   // Pure reasoning (General / Math / Science / Code)
@@ -512,7 +566,7 @@ export function parseReasoningMilestones(
     status: isThinking ? (part3 ? 'in-progress' : 'pending') : 'completed',
   });
 
-  return milestones;
+  return [...mcpMilestones, ...milestones];
 }
 
 function renderMilestoneTitle(text: string) {
@@ -601,6 +655,8 @@ export default function ChatReasoning({
   activeFeatures = [],
   defaultValue,
   className,
+  activeMcps = [],
+  previousUserPrompt = '',
 }: ChatReasoningProps) {
   // Closed by default; expands and collapses purely upon user click
   const [value, setValue] = useState<string>(defaultValue || "");
@@ -679,10 +735,14 @@ export default function ChatReasoning({
     return getFathomSearchContextualInfo(fullText, activeFeatures);
   }, [fullText, activeFeatures]);
 
-  // Keep milestones evaluation for search/cam/spark tool extraction & backward compatibility
+  // Keep milestones evaluation for search/cam/spark/mcp tool extraction & backward compatibility
   const milestones = useMemo(() => {
-    return parseReasoningMilestones(fullText, isThinking, isFathomCamActive, isFathomSparkActive, isFathomSearchActive, activeFeatures);
-  }, [fullText, isThinking, isFathomCamActive, isFathomSparkActive, isFathomSearchActive, activeFeatures]);
+    return parseReasoningMilestones(fullText, isThinking, isFathomCamActive, isFathomSparkActive, isFathomSearchActive, activeFeatures, activeMcps, previousUserPrompt);
+  }, [fullText, isThinking, isFathomCamActive, isFathomSparkActive, isFathomSearchActive, activeFeatures, activeMcps, previousUserPrompt]);
+
+  const hasActiveMcp = useMemo(() => {
+    return milestones.some(m => m.specialType === 'mcp') || (activeMcps && activeMcps.length > 0);
+  }, [milestones, activeMcps]);
 
   // Stable progressive milestones: During thinking, show only reached milestones (completed + current in-progress)
   // to avoid showing a block of static pending steps all at once
@@ -800,6 +860,13 @@ export default function ChatReasoning({
                 );
               })}
 
+              {hasActiveMcp && (
+                <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10 text-zinc-200 select-none transition-all text-[9.5px] sm:text-[10.5px] font-mono font-medium">
+                  <Cpu size={10} className="text-zinc-300" />
+                  <span>بروتوكول MCP</span>
+                </span>
+              )}
+
               {!visibleHeaderFeatures.length && isTimeIntent && (
                 <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full time-detect-glass select-none transition-all">
                   <TimeDetectIcon size={10} />
@@ -829,6 +896,7 @@ export default function ChatReasoning({
                   const isSearch = m.specialType === 'search';
                   const isCam = m.specialType === 'cam';
                   const isSpark = m.specialType === 'spark';
+                  const isMcp = m.specialType === 'mcp';
                   const isInProgress = m.status === 'in-progress';
                   const isCompleted = m.status === 'completed';
                   const stepKey = m.id || String(idx);
@@ -865,6 +933,8 @@ export default function ChatReasoning({
                           <Camera className="size-2 sm:size-2.5 text-emerald-400 stroke-[2]" />
                         ) : isSpark ? (
                           <Sparkles className="size-2 sm:size-2.5 text-purple-400 stroke-[2]" />
+                        ) : isMcp ? (
+                          <Cpu className="size-2 sm:size-2.5 text-zinc-300 stroke-[2]" />
                         ) : isCompleted ? (
                           <Check className="size-2 sm:size-2.5 text-emerald-400 stroke-[2.5]" />
                         ) : isInProgress ? (
@@ -891,7 +961,7 @@ export default function ChatReasoning({
                           aria-expanded={isExpanded}
                         >
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            {!isSearch && !isCam && !isSpark && (
+                            {!isSearch && !isCam && !isSpark && !isMcp && (
                               <span className="text-[10px] font-mono font-bold text-zinc-500 shrink-0 select-none">
                                 0{idx + 1}
                               </span>

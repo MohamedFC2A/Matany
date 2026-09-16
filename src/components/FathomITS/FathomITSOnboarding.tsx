@@ -5,8 +5,7 @@
 // ============================================================================
 
 import React, { useState } from 'react';
-import { TargetLanguageCode, CEFRLevel, TutorVoice } from '../../types/fathomITS';
-import { CURATED_TUTOR_VOICES } from '../../../api/elevenlabs';
+import { TargetLanguageCode, CEFRLevel, TutorVoice, CURATED_TUTOR_VOICES } from '../../types/fathomITS';
 import { FathomITSSoundManager } from './FathomITSSoundManager';
 import { Volume2, Play, Square, Check, Sparkles, Globe, Compass, ArrowLeft } from 'lucide-react';
 

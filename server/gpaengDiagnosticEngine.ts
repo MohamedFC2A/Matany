@@ -509,7 +509,7 @@ export class GpaengDiagnosticEngine {
       }
 
       const openIncidentsCount = rpcAnalytics?.open_incidents ?? 0;
-      const sviScore = openIncidentsCount === 0 ? 100.0 : (rpcAnalytics?.svi_score ?? 100.0);
+      const sviScore = rpcAnalytics?.svi_score !== undefined ? rpcAnalytics.svi_score : (openIncidentsCount === 0 ? 100.0 : 70.0);
       const healthStatus = sviScore >= 90 ? 'OPTIMAL' : sviScore >= 75 ? 'NOMINAL' : sviScore >= 50 ? 'DEGRADED' : 'CRITICAL';
 
       await supabase.from('matany_gpaeng_snapshots').insert({

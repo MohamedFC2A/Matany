@@ -198,12 +198,12 @@ export const CONTEXTUAL_IMAGE_ADDITION_PATTERNS = [
 export const NEURAL_IMAGE_GENERATION_PATTERNS = [
   /(?:صورة|صوره|خلفية|خلفيه|wallpaper|بورتريه|portrait)\s+(?:واقعية|فوتوغرافية|احترافية|عالية\s+الدقة|hd|4k|8k|فنية)/i,
   /(?:صمم|صممي|انشئ|أنشئ|ولد|توليد|اعمل|اعملي|سوي|سويلي|طلع|طلعلي|اريد|أريد|عايز|عاوز|بدي|محتاج|تخيل|ارسم|ارسمي|هات|جهز|صنع|create|generate|design|draw|make|render)\s+(?:لي\s+)?(?:صورة|صوره|خلفية|خلفيه|لوحة|بورتريه|photo|image|picture|wallpaper|portrait)/i,
-  // Creation verbs with drawing / visualizing any subject
-  /(?:ارسم|ارسمي|صمم|صممي|انشئ|أنشئ|ولد|توليد|اعمل|اعملي|سوي|سويلي|تخيل|draw|paint|render)\s+(?:لي\s+)?[\p{L}\p{N}\s]{2,50}/iu,
+  // Explicit drawing verbs on visual subjects
+  /(?:ارسم|ارسمي|draw|paint)\s+(?:لي\s+)?[\p{L}\p{N}\s]{2,40}/iu,
   // Concise two-word queries: "صورة [noun]" (e.g. صورة سيارة، صورة فضاء، صورة اسد، صورة بحر، صورة بنت، صورة قطة)
   /^(?:صورة|صوره|خلفية\s*شاشة|خلفيه\s*شاشة|wallpaper|بورتريه|portrait)\s+[\p{L}\p{N}]+/iu,
-  // Creation verbs directly on objects
-  /(?:صمم|صممي|انشئ|أنشئ|ولد|توليد|اعمل|اعملي|سوي|سويلي|ارسم|ارسمي|تخيل)\s+(?:لي\s+)?(?:قطة|كلب|[أا]سد|نمر|طائر|عصفور|حيوان|شجرة|زهور|ورد|سيارة|عربية|طبيعة|منظر|[أا]شكال|شمس|غروب|شروق|قمر|بحر|فضاء|كوكب|رجل|شخص|وجه|بنت|طفل|بيت|مدينة|سفينة|طائرة|طبيعة\s*صامتة|قصر|مبنى|شارع|غرفة|ساعة|هاتف|كمبيوتر|روبوت|وحش|حصان|ذئب|فراشة|جبل|شاطئ|غابة)/i,
+  // Physical visual objects with drawing/designing (e.g. "صمم سيارة", "ارسم قطة")
+  /(?:ارسم|ارسمي|تخيل|صمم)\s+(?:لي\s+)?(?:قطة|كلب|[أا]سد|نمر|طائر|عصفور|حيوان|شجرة|زهور|ورد|سيارة|عربية|طبيعة|منظر|[أا]شكال|شمس|غروب|شروق|قمر|بحر|فضاء|كوكب|رجل|شخص|وجه|بنت|طفل|طبيعة\s*صامتة|وحش|حصان|ذئب|فراشة|جبل|شاطئ|غابة)/i,
   /(?:صورة|صوره|خلفية|خلفيه|بورتريه|photo|image|picture)\s+(?:لـ|للـ|عن|فيها|تعبر\s+عن|جميلة|فنية|واقعية|احترافية|طبيعية|سينمائية|شخصية|متحركة|جديدة|hd|4k|8k)/i,
   /\b(?:generate\s+(?:an?\s+)?(?:image|photo|picture|wallpaper|portrait)|create\s+(?:an?\s+)?(?:image|photo|picture|wallpaper|portrait)|design\s+(?:an?\s+)?(?:image|photo|picture|wallpaper|portrait)|draw\s+(?:an?\s+)?(?:image|photo|picture)|image\s+of|photo\s+of|picture\s+of|photorealistic|realistic\s+photo|dslr\s+shot|hyperrealistic|realistic\s+portrait|realistic\s+human|realistic\s+person|generate\s+photo|create\s+photo)\b/i
 ];
@@ -1065,11 +1065,13 @@ export class DynamicParameterTuner {
       };
     }
 
-    // Contextual Image Continuity: Check if user is editing or adding to a previously generated or uploaded image in history
     const priorNeuralImage = this.extractPriorNeuralImage(request.conversationHistory || []);
-    const isContextualImageEditOrAdd = Boolean(priorNeuralImage) && (
-      CONTEXTUAL_IMAGE_EDIT_PATTERNS.some(p => p.test(text)) ||
-      CONTEXTUAL_IMAGE_ADDITION_PATTERNS.some(p => p.test(text)) ||
+    const isExplicitSvgKeyword = /(?:svg|فيكتور|متجهات|شعاعي|vector)/i.test(text);
+    const isCodeOrTextFollowup = !isExplicitSvgKeyword && /(?:كود|برمجة|دالة|ملف|موقع|صفحة|واجهة|html|css|js|ts|python|react|api|bug|error|خطأ|مشكلة|خطة|مقال|نص|شرح|database|قاعدة|قواعد|تقرير|جدول|فحص|بحث|استعلام)/i.test(text);
+    const hasVisualTargetInText = /(?:في\s+الصورة|على\s+الصورة|بالصورة|الصورة\s+دي|الصورة\s+المرفقة|الصورة\s+السابقة|الصورة|الخلفية|لون|الوان|ألوان|القميص|الفستان|السيارة|العربية|الشعر|العين|البنطلون|الباب|الجدار|اللوحة|الملامح|البشرة|وجه|شخص|مطر|دخان|ثلج|بالليل|بالنهار|license\s*plate|photo|image)/i.test(text);
+
+    const isContextualImageEditOrAdd = Boolean(priorNeuralImage) && !isCodeOrTextFollowup && (
+      (hasVisualTargetInText && (CONTEXTUAL_IMAGE_EDIT_PATTERNS.some(p => p.test(text)) || CONTEXTUAL_IMAGE_ADDITION_PATTERNS.some(p => p.test(text)))) ||
       NEURAL_IMAGE_PATTERNS.some(p => p.test(text))
     );
 
@@ -1173,7 +1175,7 @@ export class DynamicParameterTuner {
     const isExplicitSvgRequested = !isSvgInformationalOrNegative && isDirectSvgCreation;
 
     const isSvgHistoryFollowup = isFollowUpPrompt && /(?:```svg|<svg)/i.test(historyText);
-    const isSvgDesignFollowup = isSvgHistoryFollowup &&
+    const isSvgDesignFollowup = isSvgHistoryFollowup && !isCodeOrTextFollowup &&
       /(?:غير|عدل|بدل|تعديل|تغيير|لون|الوان|ألوان|الخلفية|خلفية|الشعار|اللوجو|الايقونة|الأيقونة|الفيكتور|التصميم|ذهبي|فضي|أبيض|ابيض|اسود|أسود|احمر|أحمر|ازرق|أزرق|اخضر|أخضر|شفافة|شفاف|خليه|اجعله|كبر|صغر|احذف|شيل)/i.test(text) &&
       !/(?:صورة|صوره|photo|image|picture|فوتوغراف|واقعي|واقعية)/i.test(text);
 
@@ -1187,9 +1189,11 @@ export class DynamicParameterTuner {
 
     const matchesSvg = !isSvgInformationalOrNegative && !isImageQueryWithoutSvg && (
       isExplicitSvgRequested ||
-      isSvgDesignFollowup ||
-      SVG_DESIGN_PATTERNS.some(p => p.test(text)) ||
-      (isFollowUpPrompt && isDirectSvgCreation && SVG_DESIGN_PATTERNS.some(p => p.test(historyText)))
+      (!isCodeOrTextFollowup && (
+        isSvgDesignFollowup ||
+        SVG_DESIGN_PATTERNS.some(p => p.test(text)) ||
+        (isFollowUpPrompt && isDirectSvgCreation && SVG_DESIGN_PATTERNS.some(p => p.test(historyText)))
+      ))
     );
     if (matchesSvg) {
       const combined = `${historyText} ${text}`;
@@ -1208,9 +1212,9 @@ export class DynamicParameterTuner {
       /^(?:كيف|طريقة|شرح|اشرح|لماذا|ليه|ما\s*هو|ما\s*هي|ماذا\s*يعني|ما\s*الفرق|how\s+to|explain|why|what\s+is)\b/i.test(text);
     const hasExplicitCreateCmd = /(?:صمم|صممي|انشئ|أنشئ|ولد|توليد|اعمل|اعملي|سوي|سويلي|طلع|طلعلي|اريد|أريد|عايز|عاوز|بدي|محتاج|تخيل|ارسم|ارسمي|هات|جهز|صنع|create|generate|design|draw|make|render)\s+(?:لي\s+)?(?:صورة|صوره|خلفية|خلفيه|لوحة|بورتريه|photo|image|picture|wallpaper|portrait)/i.test(text);
 
-    const matchesNeuralGen = !isExplicitSvgRequested && (!isCodeOrHowToQuery || hasExplicitCreateCmd) && (
+    const matchesNeuralGen = !isExplicitSvgRequested && (!isCodeOrHowToQuery || hasExplicitCreateCmd) && !isCodeOrTextFollowup && (
       NEURAL_IMAGE_GENERATION_PATTERNS.some(p => p.test(text)) ||
-      (isFollowUpPrompt && !isSvgHistoryFollowup && NEURAL_IMAGE_GENERATION_PATTERNS.some(p => p.test(historyText)))
+      (isFollowUpPrompt && !isSvgHistoryFollowup && hasVisualTargetInText && NEURAL_IMAGE_GENERATION_PATTERNS.some(p => p.test(historyText)))
     );
 
     if (matchesNeuralGen && (!isExplicitSvgRequested || isSvgInformationalOrNegative) && !(isSvgHistoryFollowup && /(?:الشعار|اللوجو|الايقونة|الأيقونة|الفيكتور|التصميم|الخلفية|لون|الوان|ألوان|ذهبي|فضي)/i.test(text))) {

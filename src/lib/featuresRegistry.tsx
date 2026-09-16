@@ -1246,7 +1246,8 @@ export function routeFeatureIntent(
     }
 
     const hasSvgHistory = Boolean(context?.hasSvgInHistory || context?.priorSvgContent);
-    const isSvgFollowupEdit = (hasSvgCode || hasSvgHistory) &&
+    const isCodeOrTextRequest = /(?:كود|برمجة|دالة|ملف|موقع|صفحة|واجهة|html|css|js|ts|python|react|api|bug|error|خطأ|مشكلة|قاعدة|database|شرح|تقرير|خطة)/i.test(pLower);
+    const isSvgFollowupEdit = (hasSvgCode || hasSvgHistory) && !isCodeOrTextRequest &&
       /(?:غير|عدل|بدل|لون|الخلفية|خلفية|الشعار|اللوجو|الايقونة|الأيقونة|الفيكتور|التصميم|ذهبي|فضي|أبيض|ابيض|اسود|أسود)/i.test(pLower);
 
     // Strict Exclusion: If user asked for an image (صورة, photo, image, picture, خلفية شاشة, بورتريه) without mentioning svg/vector, NEVER trigger SVG Studio!
@@ -1336,7 +1337,7 @@ export function routeFeatureIntent(
       // Concise two-word queries: "صورة [noun]" (e.g. صورة سيارة، صورة فضاء، صورة اسد، صورة بحر)
       /^(?:صورة|صوره|خلفية\s*شاشة|خلفيه\s*شاشة|wallpaper|بورتريه|portrait)\s+[\p{L}\p{N}]+/iu.test(pLower) ||
       /(?:صورة|صوره|خلفية|خلفيه|بورتريه|photo|image|picture)\s+(?:لـ|للـ|عن|فيها|تعبر\s+عن|جميلة|فنية|واقعية|احترافية|طبيعية|سينمائية|شخصية|متحركة|جديدة)/i.test(pLower) ||
-      /(?:صمم|صممي|انشئ|أنشئ|ولد|توليد|اعمل|اعملي|سوي|سويلي|ارسم|ارسمي|تخيل)\s+(?:لي\s+)?(?:قطة|كلب|[أا]سد|نمر|طائر|عصفور|حيوان|شجرة|زهور|ورد|سيارة|عربية|طبيعة|منظر|[أا]شكال|شمس|غروب|شروق|قمر|بحر|فضاء|كوكب|رجل|شخص|وجه|بنت|طفل|بيت|مدينة|سفينة|طائرة|طبيعة\s*صامتة|قصر|مبنى|شارع|غرفة|ساعة|هاتف|كمبيوتر|روبوت|وحش|حصان|ذئب|فراشة|جبل|شاطئ|غابة)/i.test(pLower) ||
+      /(?:ارسم|ارسمي|تخيل|صمم)\s+(?:لي\s+)?(?:قطة|كلب|[أا]سد|نمر|طائر|عصفور|حيوان|شجرة|زهور|ورد|سيارة|عربية|طبيعة|منظر|[أا]شكال|شمس|غروب|شروق|قمر|بحر|فضاء|كوكب|رجل|شخص|وجه|بنت|طفل|طبيعة\s*صامتة|وحش|حصان|ذئب|فراشة|جبل|شاطئ|غابة)/i.test(pLower) ||
       /\b(?:generate\s+(?:an?\s+)?(?:image|photo|picture|wallpaper|portrait)|create\s+(?:an?\s+)?(?:image|photo|picture|wallpaper|portrait)|design\s+(?:an?\s+)?(?:image|photo|picture|wallpaper|portrait)|draw\s+(?:an?\s+)?(?:image|photo|picture)|image\s+of|photo\s+of|picture\s+of|photorealistic|realistic\s+photo|dslr\s+shot|hyperrealistic|realistic\s+portrait|realistic\s+human|realistic\s+person)\b/i.test(pLower)
     );
 
