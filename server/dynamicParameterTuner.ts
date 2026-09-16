@@ -2328,11 +2328,12 @@ export class DynamicParameterTuner {
           cleanPayload.models = cleanPayload.models.map((m: string) => typeof m === 'string' ? m.replace(/:online$/, '') : m);
         }
 
-        const maxResults = cleanPayload.webSearchMaxResults || 5;
+        const maxResults = cleanPayload.webSearchMaxResults || 6;
+        const engineChoice = cleanPayload.searchEngine === 'brave' ? 'brave' : 'auto';
         const webSearchTool = {
           type: 'openrouter:web_search',
           parameters: {
-            engine: 'auto',
+            engine: engineChoice,
             max_results: maxResults
           }
         };
@@ -2349,6 +2350,7 @@ export class DynamicParameterTuner {
       delete cleanPayload.enableWebSearch;
       delete cleanPayload.deepSearch;
       delete cleanPayload.webSearchMaxResults;
+      delete cleanPayload.searchEngine;
     }
     return cleanPayload;
   }

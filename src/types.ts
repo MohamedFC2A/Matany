@@ -43,6 +43,7 @@ export interface ChatMessageItem {
   videoKeyframes?: string[];
   mediaAttachments?: MediaAttachmentItem[];
   timestamp: string;
+  createdAt?: string;
   isMatany?: boolean;
   model?: ModelType;
   tokensCount?: number;

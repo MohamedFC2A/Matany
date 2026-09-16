@@ -77,7 +77,8 @@ export type FathomSearchDomain =
   | 'memory'
   | 'temporal'
   | 'code'
-  | 'conversation';
+  | 'conversation'
+  | 'mcp';
 
 export interface FathomSearchContextualInfo {
   domain: FathomSearchDomain;
@@ -88,7 +89,8 @@ export interface FathomSearchContextualInfo {
 export function getFathomSearchContextualInfo(
   text: string = '',
   activeFeatures: DetectedFeatureData[] = [],
-  explicitQuery?: string
+  explicitQuery?: string,
+  activeMcps: string[] = []
 ): FathomSearchContextualInfo {
   const content = text || '';
 
@@ -97,6 +99,19 @@ export function getFathomSearchContextualInfo(
     content.match(/\[(?:البحث عن|query)\s*:\s*["']?([^\]"']+)["']?\]/i)?.[1]?.trim() ||
     content.match(/(?:البحث عن|استعلام عن)\s*[:"']?\s*["']?([^"\n\r\]•]+)["']?/i)?.[1]?.trim();
 
+  // 0. Active Model Context Protocol (MCP) or multi-MCP detection
+  const hasMcpContext = (activeMcps && activeMcps.length > 0) ||
+    /(?:talabat|طلبات|github|linear|brave|mcp|بروتوكول|قم\s*بتفعيل)/i.test(content) ||
+    /(?:talabat|طلبات|github|linear|brave|mcp|بروتوكول|قم\s*بتفعيل)/i.test(queryMatch || '');
+
+  if (hasMcpContext) {
+    return {
+      domain: 'mcp',
+      title: 'Fathom Search From MCPs',
+      contextSentence: ''
+    };
+  }
+
   // 1. AI Video / Image Forensic Check
   const hasAiDetect = activeFeatures.some(f => f.id === 'ai_detect' || f.id === 'metadata_detect') ||
     /(?:ai[- ]?detect|فحص\s*الذكاء\s*الاصطناعي|تزييف\s*عميق|deepfake|مولدة\s*بالذكاء|مولد\s*بالذكاء|fake\s*image|ai[- ]?generated|real\s*or\s*fake|حقيقية\s*أم\s*ذكاء|حقيقي\s*ولا\s*ذكاء|صورة\s*حقيقية|معدلة\s*بالذكاء)/i.test(content);
@@ -104,8 +119,8 @@ export function getFathomSearchContextualInfo(
   if (hasAiDetect) {
     return {
       domain: 'ai_detect',
-      title: 'Fathom Search of AI Vid or Img',
-      contextSentence: 'فحص الطبقات البصرية والكشف الجنائي المتقدم عن ملامح التوليد الاصطناعي والتزييف العميق.'
+      title: 'Fathom Search From AI Vision',
+      contextSentence: ''
     };
   }
 
@@ -116,8 +131,8 @@ export function getFathomSearchContextualInfo(
   if (hasMemory) {
     return {
       domain: 'memory',
-      title: 'Fathom Search of Neural Memory',
-      contextSentence: 'استرجاع فائق عبر الذاكرة العصبية وتجميع السياق العابر للجلسات من قاعدة المعرفة المستدامة.'
+      title: 'Fathom Search From Neural Memory',
+      contextSentence: ''
     };
   }
 
@@ -128,8 +143,8 @@ export function getFathomSearchContextualInfo(
   if (hasTime) {
     return {
       domain: 'temporal',
-      title: 'Fathom Search of Temporal Context',
-      contextSentence: 'معايرة الإحداثيات الزمنية الحالية ومطابقة التواريخ والتقويم الفعلي بدقة آنية.'
+      title: 'Fathom Search From Temporal Context',
+      contextSentence: ''
     };
   }
 
@@ -140,8 +155,8 @@ export function getFathomSearchContextualInfo(
   if (hasCode && !/(?:بحث\s*عن|استعلام\s*شبكي|web\s*search|سعر|طقس|أخبار|نتائج)/i.test(content)) {
     return {
       domain: 'code',
-      title: queryMatch ? `Fathom Search of ${queryMatch}` : 'Fathom Search of Code & Architecture',
-      contextSentence: 'استكشاف وتشريح معماريات البرمجيات ومراجعة المعايير الهندسية وأنماط التصميم.'
+      title: queryMatch ? `Fathom Search From ${queryMatch.slice(0, 30)}` : 'Fathom Search From Code & Architecture',
+      contextSentence: ''
     };
   }
 
@@ -151,18 +166,24 @@ export function getFathomSearchContextualInfo(
   if (hasConversationContext && !/(?:بحث\s*عن|استعلام\s*شبكي|web\s*search|سعر|طقس|أخبار)/i.test(content)) {
     return {
       domain: 'conversation',
-      title: queryMatch ? `Fathom Search of ${queryMatch}` : 'Fathom Search of Conversation & Context',
-      contextSentence: 'استيعاب متعدد الطبقات لسياق المحادثة وبناء الروابط المنطقية بين الرسائل والملفات.'
+      title: queryMatch ? `Fathom Search From ${queryMatch.slice(0, 30)}` : 'Fathom Search From Conversation',
+      contextSentence: ''
     };
   }
 
   // 6. Default: Dynamic Live Web Query
-  const displayTitle = queryMatch ? `Fathom Search of ${queryMatch}` : 'Fathom Search of Web';
+  let displayTitle = 'Fathom Search From Web';
+  if (queryMatch) {
+    const cleanQ = queryMatch.replace(/["'[\]]/g, '').trim();
+    if (cleanQ && !/(?:قم\s*بتفعيل|بروتوكول|mcp|talabat)/i.test(cleanQ)) {
+      displayTitle = `Fathom Search From ${cleanQ.slice(0, 35)}`;
+    }
+  }
 
   return {
     domain: 'web',
     title: displayTitle,
-    contextSentence: 'استطلاع فائق وموسع للويب الحي وتدقيق المصادر واستخلاص الحقائق عبر فروع معرفية متزامنة.'
+    contextSentence: ''
   };
 }
 
@@ -182,7 +203,7 @@ export function parseReasoningMilestones(
   const initialQueryMatch = rawText?.match(/\[(?:البحث عن|query)\s*:\s*["']?([^\]"']+)["']?\]/i)?.[1]?.trim() ||
                             rawText?.match(/(?:البحث عن|استعلام عن)\s*[:"']?\s*["']?([^"\n\r\]•]+)["']?/i)?.[1]?.trim();
 
-  const searchContext = getFathomSearchContextualInfo(rawText, activeFeatures, initialQueryMatch);
+  const searchContext = getFathomSearchContextualInfo(rawText, activeFeatures, initialQueryMatch, activeMcps);
 
   // Detect active MCP protocols from props, reasoning text, or prompt context
   const combinedContext = `${rawText || ''} ${promptText || ''}`;
@@ -252,7 +273,7 @@ export function parseReasoningMilestones(
       defaultSteps.push({
         id: 'step-fathom-search',
         title: searchContext.title,
-        details: isThinking ? searchContext.contextSentence : 'تم استرجاع المصادر المعتمدة وتدقيق البيانات الحية بنجاح.',
+        details: isThinking ? undefined : 'تم استرجاع المصادر المعتمدة وتدقيق البيانات الحية بنجاح.',
         status: isThinking ? 'in-progress' : 'completed',
         specialType: 'search',
         searchQuery: '',
@@ -440,7 +461,7 @@ export function parseReasoningMilestones(
     milestones.push({
       id: 'step-fathom-search',
       title: searchContext.title,
-      details: searchSourcesDetails || searchContext.contextSentence,
+      details: searchSourcesDetails || undefined,
       status: 'completed',
       specialType: 'search',
       searchQuery: detectedSearchQuery,
@@ -582,78 +603,80 @@ export function parseReasoningMilestones(
 
 function renderMilestoneTitle(text: string) {
   if (!text) return null;
-  const engineRegex = /(?:\[?SERPER(?:\s*AI)?\]?|Serper(?:\s*AI)?|سيربر|\[?FATHOM\s*SEARCH\]?|Fathom\s*Search|\bFathom-Search\b|FathomSearch|فاثوم\s*سيرش|\[?FATHOM\s*SPARK\]?|Fathom\s*Spark|\bFathom-Spark\b|FathomSpark|فاثوم\s*سبارك|\[?SPARK\]?|\bSpark\b|\[?FATHOM\s*CAM(?:\s*VISION)?\]?|Fathom\s*Cam(?:\s*Vision)?|\bFathom-Cam\b|FathomCam|فاثوم\s*كام|\[?FATHOM\s*VISION\]?)/gi;
 
-  if (!engineRegex.test(text)) {
-    return text;
+  // 1. Direct Fathom Search matching with BiDi isolation (guarantees LTR visual order)
+  const searchPattern = /^(.*?)(?:\[?SERPER(?:\s*AI)?\]?|Serper(?:\s*AI)?|سيربر|\[?FATHOM\s*SEARCH\]?|Fathom\s*Search|\bFathom-Search\b|FathomSearch|فاثوم\s*سيرش)\s*(?:of|from|via|:)?\s*([^•\n\r]*)(.*)$/i;
+  const searchMatch = text.match(searchPattern);
+  if (searchMatch) {
+    const prefix = searchMatch[1]?.trim();
+    let target = searchMatch[2]?.trim() || 'Web';
+    const suffix = searchMatch[3]?.trim();
+
+    // Normalize target: if it contains MCP keywords or prompt text, cleanly format as "MCPs"
+    if (/(?:mcp|بروتوكول|talabat|github|linear|brave|قم\s*بتفعيل)/i.test(target)) {
+      target = 'MCPs';
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1.5 flex-wrap">
+        {prefix && <span>{prefix}</span>}
+        <bdi dir="ltr" className="inline-flex items-center gap-1.5 font-sans align-baseline select-none">
+          <span className="inline-flex items-center gap-1 font-black tracking-wide">
+            <span className="bg-gradient-to-r from-cyan-300 via-sky-200 to-indigo-300 bg-clip-text text-transparent font-black tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              Fathom
+            </span>
+            <span className="bg-gradient-to-b from-white via-zinc-100 to-zinc-300 bg-clip-text text-transparent font-black tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              Search
+            </span>
+          </span>
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-zinc-900 border border-zinc-700/60 text-cyan-300 font-mono font-bold text-[10.5px] sm:text-[11.5px] tracking-tight">
+            From {target}
+          </span>
+        </bdi>
+        {suffix && <span>{suffix}</span>}
+      </span>
+    );
   }
 
-  const parts = text.split(engineRegex);
-  const matches = text.match(engineRegex) || [];
+  // 2. Fathom Cam matching with BiDi isolation
+  const camPattern = /^(.*?)(?:\[?FATHOM\s*CAM(?:\s*VISION)?\]?|Fathom\s*Cam(?:\s*Vision)?|\bFathom-Cam\b|FathomCam|فاثوم\s*كام)(.*)$/i;
+  const camMatch = text.match(camPattern);
+  if (camMatch) {
+    return (
+      <span className="inline-flex items-center gap-1.5 flex-wrap">
+        <bdi dir="ltr" className="inline-flex items-center gap-1 font-sans align-baseline select-none">
+          <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 bg-clip-text text-transparent font-black tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+            Fathom
+          </span>
+          <span className="bg-gradient-to-b from-white via-zinc-100 to-zinc-300 bg-clip-text text-transparent font-black tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+            Cam
+          </span>
+        </bdi>
+        {camMatch[2] && <span>{camMatch[2]}</span>}
+      </span>
+    );
+  }
 
-  return (
-    <span>
-      {parts.map((part, i) => {
-        const match = matches[i];
-        if (!match) {
-          const domainMatch = part.match(/^\s*(of\s+[^•\n\r]+)(.*)$/is);
-          if (domainMatch) {
-            const domainLabel = domainMatch[1].trim();
-            const rest = domainMatch[2];
-            return (
-              <React.Fragment key={i}>
-                <span className="inline-flex items-center text-cyan-300 font-mono font-bold text-[11px] sm:text-xs tracking-tight mx-1">
-                  {domainLabel}
-                </span>
-                {rest}
-              </React.Fragment>
-            );
-          }
-          return <React.Fragment key={i}>{part}</React.Fragment>;
-        }
+  // 3. Fathom Spark matching with BiDi isolation
+  const sparkPattern = /^(.*?)(?:\[?FATHOM\s*SPARK\]?|Fathom\s*Spark|\bFathom-Spark\b|FathomSpark|فاثوم\s*سبارك)(.*)$/i;
+  const sparkMatch = text.match(sparkPattern);
+  if (sparkMatch) {
+    return (
+      <span className="inline-flex items-center gap-1.5 flex-wrap">
+        <bdi dir="ltr" className="inline-flex items-center gap-1 font-sans align-baseline select-none">
+          <span className="bg-gradient-to-r from-violet-300 via-purple-200 to-indigo-300 bg-clip-text text-transparent font-black tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+            Fathom
+          </span>
+          <span className="bg-gradient-to-b from-white via-zinc-100 to-zinc-300 bg-clip-text text-transparent font-black tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+            Spark
+          </span>
+        </bdi>
+        {sparkMatch[2] && <span>{sparkMatch[2]}</span>}
+      </span>
+    );
+  }
 
-        const isSearch = /search|سيرش|serper|سيربر/i.test(match);
-        const isSpark = !isSearch && /spark|سبارك/i.test(match);
-        const isCam = !isSearch && !isSpark && /cam|vision|كام/i.test(match);
-
-        return (
-          <React.Fragment key={i}>
-            {part}
-            {isSearch && (
-              <span dir="ltr" className="inline-flex items-center gap-1 mx-1.5 select-none font-sans font-black tracking-wide align-baseline">
-                <span className="bg-gradient-to-r from-cyan-300 via-sky-200 to-indigo-300 bg-clip-text text-transparent font-black tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                  Fathom
-                </span>
-                <span className="bg-gradient-to-b from-white via-zinc-100 to-zinc-300 bg-clip-text text-transparent font-black tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                  Search
-                </span>
-              </span>
-            )}
-            {isCam && (
-              <span dir="ltr" className="inline-flex items-center gap-1 mx-1.5 select-none font-sans font-black tracking-wide align-baseline">
-                <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 bg-clip-text text-transparent font-black tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                  Fathom
-                </span>
-                <span className="bg-gradient-to-b from-white via-zinc-100 to-zinc-300 bg-clip-text text-transparent font-black tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                  Cam
-                </span>
-              </span>
-            )}
-            {isSpark && (
-              <span dir="ltr" className="inline-flex items-center gap-1 mx-1.5 select-none font-sans font-black tracking-wide align-baseline">
-                <span className="bg-gradient-to-r from-violet-300 via-purple-200 to-indigo-300 bg-clip-text text-transparent font-black tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                  Fathom
-                </span>
-                <span className="bg-gradient-to-b from-white via-zinc-100 to-zinc-300 bg-clip-text text-transparent font-black tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                  Spark
-                </span>
-              </span>
-            )}
-          </React.Fragment>
-        );
-      })}
-    </span>
-  );
+  return text;
 }
 
 export default function ChatReasoning({
@@ -872,8 +895,8 @@ export default function ChatReasoning({
               })}
 
               {hasActiveMcp && (
-                <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10 text-zinc-200 select-none transition-all text-[9.5px] sm:text-[10.5px] font-mono font-medium">
-                  <Cpu size={10} className="text-zinc-300" />
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-zinc-900 border border-zinc-700/60 text-zinc-200 select-none transition-all text-[10px] sm:text-[11px] font-sans font-medium shadow-none">
+                  <Cpu size={11} className="text-cyan-400 shrink-0 stroke-[2]" />
                   <span>بروتوكول MCP</span>
                 </span>
               )}
@@ -1009,7 +1032,7 @@ export default function ChatReasoning({
                                   </div>
                                 )}
 
-                                {m.details && (
+                                {m.details && !m.details.includes('استطلاع فائق وموسع للويب') && (
                                   <div className="text-[10.5px] sm:text-[11px] text-zinc-300/90 leading-relaxed max-h-36 sm:max-h-48 overflow-y-auto custom-scrollbar whitespace-pre-wrap select-text p-2 rounded-lg bg-black/40 border border-white/[0.06]">
                                     {m.details}
                                   </div>

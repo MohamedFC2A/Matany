@@ -2608,7 +2608,8 @@ export default async function handler(req: Request): Promise<Response> {
     stream: true,
     max_tokens: dynamicTuning.hyperparameters.max_tokens,
     ...(dynamicTuning.hyperparameters.stop ? { stop: dynamicTuning.hyperparameters.stop } : {}),
-    enableWebSearch: willSearch || Boolean(deepSearch)
+    enableWebSearch: willSearch || Boolean(deepSearch),
+    searchEngine: Array.isArray(activeMcps) && activeMcps.includes('brave') ? 'brave' : 'auto'
   };
 
   // Candidate Gateways with Resilient Failover Loop and Dynamic Parameter Tuning

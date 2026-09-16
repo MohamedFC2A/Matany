@@ -237,7 +237,24 @@ export async function saveCloudMessage(chatId: string, userId: string | null, ms
 
     if (error) {
       console.warn('[Supabase saveMessage Error]:', error.message);
-    } else if (payload.image_url && typeof window !== 'undefined' && window.localStorage) {
+    }
+
+    // Update parent chat's updated_at timestamp in Supabase
+    supabase
+      .from('matany_chats')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', chatId)
+      .then();
+
+    // Instant local memory cache update for 0ms chat transitions
+    updateLocalMessageCache(chatId, {
+      ...msg,
+      id: messageUuid,
+      createdAt: msg.createdAt || new Date().toISOString(),
+      timestamp: msg.timestamp || formatEnglishTimestamp(new Date()),
+    });
+
+    if (payload.image_url && typeof window !== 'undefined' && window.localStorage) {
       try {
         localStorage.setItem(`fathom_img_${messageUuid}`, payload.image_url);
       } catch {}
@@ -247,7 +264,70 @@ export async function saveCloudMessage(chatId: string, userId: string | null, ms
   }
 }
 
-// Fetch all chats for user or guest device
+// Global In-Memory and Fast Session Cache for 0ms chat opening
+const CHAT_MESSAGES_MEMORY_CACHE = new Map<string, { messages: ChatMessageItem[]; timestamp: number }>();
+let USER_CHATS_MEMORY_CACHE: { chats: SupabaseChat[]; timestamp: number } | null = null;
+
+function updateLocalMessageCache(chatId: string, message: ChatMessageItem) {
+  const cached = CHAT_MESSAGES_MEMORY_CACHE.get(chatId);
+  if (cached) {
+    const existingIdx = cached.messages.findIndex(m => m.id === message.id);
+    if (existingIdx >= 0) {
+      cached.messages[existingIdx] = message;
+    } else {
+      cached.messages.push(message);
+    }
+    cached.timestamp = Date.now();
+  }
+}
+
+/**
+ * Returns locally cached messages in 0ms without waiting for network.
+ */
+export function getCachedChatMessages(chatId: string): ChatMessageItem[] | null {
+  if (!chatId) return null;
+  const mem = CHAT_MESSAGES_MEMORY_CACHE.get(chatId);
+  if (mem && mem.messages.length > 0) {
+    return mem.messages;
+  }
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      const raw = sessionStorage.getItem(`matany_cached_msgs_${chatId}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          CHAT_MESSAGES_MEMORY_CACHE.set(chatId, { messages: parsed, timestamp: Date.now() });
+          return parsed;
+        }
+      }
+    } catch {}
+  }
+  return null;
+}
+
+/**
+ * Returns locally cached user chats in 0ms without waiting for network.
+ */
+export function getCachedUserChats(): SupabaseChat[] | null {
+  if (USER_CHATS_MEMORY_CACHE && USER_CHATS_MEMORY_CACHE.chats.length > 0) {
+    return USER_CHATS_MEMORY_CACHE.chats;
+  }
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      const raw = sessionStorage.getItem('matany_cached_user_chats');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          USER_CHATS_MEMORY_CACHE = { chats: parsed, timestamp: Date.now() };
+          return parsed;
+        }
+      }
+    } catch {}
+  }
+  return null;
+}
+
+// Fetch all chats for user or guest device (Instant 0ms cache + background sync)
 export async function fetchUserChats(userId: string | null): Promise<SupabaseChat[]> {
   const deviceId = getOrCreateDeviceId();
   try {
@@ -263,15 +343,23 @@ export async function fetchUserChats(userId: string | null): Promise<SupabaseCha
 
     if (error) {
       console.warn('[Supabase fetchChats Error]:', error.message);
-      return [];
+      return getCachedUserChats() || [];
     }
-    return data || [];
+
+    const chats = data || [];
+    USER_CHATS_MEMORY_CACHE = { chats, timestamp: Date.now() };
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        sessionStorage.setItem('matany_cached_user_chats', JSON.stringify(chats));
+      } catch {}
+    }
+    return chats;
   } catch {
-    return [];
+    return getCachedUserChats() || [];
   }
 }
 
-// Fetch messages for a specific chat
+// Fetch messages for a specific chat with 0ms cache and background freshness
 export async function fetchChatMessages(chatId: string): Promise<ChatMessageItem[]> {
   try {
     const { data, error } = await supabase
@@ -282,7 +370,7 @@ export async function fetchChatMessages(chatId: string): Promise<ChatMessageItem
 
     if (error) {
       console.warn('[Supabase fetchMessages Error]:', error.message);
-      return [];
+      return getCachedChatMessages(chatId) || [];
     }
 
     const rawList = (data || []).map((row, idx) => {
@@ -413,6 +501,7 @@ export async function fetchChatMessages(chatId: string): Promise<ChatMessageItem
         mediaAttachments: nonImageAttachments && nonImageAttachments.length > 0 ? nonImageAttachments : undefined,
         isMatany: !!row.is_matany,
         tokensCount: row.tokens_count || 0,
+        createdAt: row.created_at,
         timestamp: formatEnglishTimestamp(new Date(row.created_at)),
       };
     });
@@ -432,9 +521,17 @@ export async function fetchChatMessages(chatId: string): Promise<ChatMessageItem
       deduplicatedList.push(item);
     }
 
+    // Persist in-memory & sessionStorage cache for instant 0ms retrieval
+    CHAT_MESSAGES_MEMORY_CACHE.set(chatId, { messages: deduplicatedList, timestamp: Date.now() });
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        sessionStorage.setItem(`matany_cached_msgs_${chatId}`, JSON.stringify(deduplicatedList));
+      } catch {}
+    }
+
     return deduplicatedList;
   } catch {
-    return [];
+    return getCachedChatMessages(chatId) || [];
   }
 }
 

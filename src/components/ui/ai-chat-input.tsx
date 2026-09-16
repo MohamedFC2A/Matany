@@ -2170,18 +2170,6 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
                 </button>
               )}
 
-              {/* Deep Search Active Icon Indicator */}
-              {isDeepSearchEffective && (
-                <button
-                  type="button"
-                  onClick={toggleDeepSearch}
-                  title="البحث المباشر في الويب مفعّل (انقر للتعطيل)"
-                  className="size-8 rounded-xl bg-zinc-950 border border-white/[0.12] hover:border-emerald-500/40 hover:bg-emerald-950/20 text-emerald-400 hover:text-emerald-300 flex items-center justify-center cursor-pointer transition-all active:scale-95 shrink-0"
-                >
-                  <Search className="w-3.5 h-3.5 text-emerald-400" />
-                </button>
-              )}
-
               {/* 3-Dots Action Button (أدوات إضافية) */}
               <button
                 type="button"

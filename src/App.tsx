@@ -37,6 +37,7 @@ import {
   saveCloudMessage,
   fetchUserChats,
   fetchChatMessages,
+  getCachedChatMessages,
   deleteCloudChat,
   fetchCrossChatHistoryForMemory,
   purgeAllLocalChatArtifacts,
@@ -799,15 +800,34 @@ Linear project intelligence is active.
 - STRICT PROHIBITION: NEVER ask for tool execution permission or output dummy tool blocks. Deliver actionable solutions directly.`;
     }
 
-    if (isBraveMcpEffective || isWebSearchEffective) {
-      mcpPromptInstruction += `\n\n[AUTHORITATIVE LIVE WEB GROUNDING & SEARCH PROTOCOL ENGAGED]:
-Real-time web search and live grounding are active.
-CRITICAL MANDATORY INSTRUCTIONS:
-- Ground all facts, dates, match results, fixtures, scores, prices, and events in verified real-time sources for 2026.
-- You MUST answer the user's question directly, factually, and completely with exact names, dates, and scores.
-- STRICT PROHIBITION: NEVER ask the user if you should perform a search (e.g. "هل تريد أن أنفذ البحث الحي الآن؟")!
-- STRICT PROHIBITION: NEVER output raw tool syntax, function calls, or command blocks (e.g. \`brave_web_search\` or \`web_search\`)!
-- Deliver the final, comprehensive, accurate answer immediately.`;
+    if (isBraveMcpEffective) {
+      mcpPromptInstruction += `\n\n[AUTHORITATIVE BRAVE SEARCH MCP PROTOCOL ENGAGED]:
+Brave Privacy Search grounding is active.
+- Ground all facts, dates, match results, fixtures, scores, prices, and events in verified real-time sources for 2026 via Brave Search.
+- STRICT PROHIBITION: NEVER ask if you should search and NEVER output dummy tool blocks like \`brave_web_search\`. Provide the final verified facts immediately.`;
+    }
+
+    if (isWebSearchEffective) {
+      mcpPromptInstruction += `\n\n[AUTHORITATIVE LIVE WEB SEARCH PROTOCOL ENGAGED]:
+Direct live web research and source verification are active.
+- Ground all live information, current affairs, breaking events, and statistics in authoritative real-time 2026 citations.
+- STRICT PROHIBITION: Deliver the comprehensive, accurate, factual answer immediately without asking for confirmation.`;
+    }
+
+    // When 2 or more MCP tools are active concurrently (up to all 5)
+    const activeMcpNames: string[] = [];
+    if (isTalabatEffective) activeMcpNames.push('Talabat MCP');
+    if (isGitHubMcpEffective) activeMcpNames.push('GitHub MCP');
+    if (isLinearMcpEffective) activeMcpNames.push('Linear MCP');
+    if (isBraveMcpEffective) activeMcpNames.push('Brave Search MCP');
+    if (isWebSearchEffective) activeMcpNames.push('Web Search Protocol');
+
+    if (activeMcpNames.length > 1) {
+      mcpPromptInstruction = `\n\n[AUTHORITATIVE MULTI-MCP PROTOCOL FUSION SUITE ACTIVE]:
+You are currently operating with multiple Model Context Protocols concurrently (${activeMcpNames.join(' + ')}).
+Orchestrate their capabilities seamlessly without collision:
+- Harmonize insights across food, engineering, project management, and live web research.
+- Always provide immediate direct answers without tool syntax leakage or confirmation requests.` + mcpPromptInstruction;
     }
 
     // For LLM reasoning, pass userMessage cleanly without fake text
@@ -1252,8 +1272,17 @@ CRITICAL MANDATORY INSTRUCTIONS:
     setIsStreaming(false);
     setCurrentChatId(chatId);
     updateActiveChatUrlAndStorage(chatId);
-    setMessages([]);
-    setIsRestoringChat(true);
+
+    // Instant 0ms Cache Render: Display cached conversation immediately
+    const cachedHistory = getCachedChatMessages(chatId);
+    if (cachedHistory && cachedHistory.length > 0) {
+      setMessages(cachedHistory);
+      setIsRestoringChat(false);
+    } else {
+      setMessages([]);
+      setIsRestoringChat(true);
+    }
+
     try {
       const history = await fetchChatMessages(chatId);
       // Instant 0ms cache priming for all messages with images
