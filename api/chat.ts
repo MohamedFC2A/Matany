@@ -2699,7 +2699,7 @@ export default async function handler(req: Request): Promise<Response> {
         payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.2-contributor', { ...basePayload, enableWebSearch: true }, dynamicTuning)
       });
       candidateGateways.push({
-        name: 'OpenRouter Flagship Web Search Fallback (meta/muse-spark-1.3 + openrouter:web_search)',
+        name: 'OpenRouter High-Speed Web Search (google/gemini-2.5-flash + openrouter:web_search)',
         url: `${OPENROUTER_BASE_URL}/chat/completions`,
         headers: {
           'Content-Type': 'application/json',
@@ -2707,18 +2707,18 @@ export default async function handler(req: Request): Promise<Response> {
           'HTTP-Referer': 'https://matany.one',
           'X-Title': 'Matany AI',
         },
-        payload: DynamicParameterTuner.tuneGatewayPayload('meta/muse-spark-1.3', { ...basePayload, enableWebSearch: true }, dynamicTuning)
+        payload: DynamicParameterTuner.tuneGatewayPayload('google/gemini-2.5-flash', { ...basePayload, enableWebSearch: true }, dynamicTuning)
       });
     }
     if (DEEPSEEK_API_KEY) {
       candidateGateways.push({
-        name: 'DeepSeek Reasoner Grounded Search Core (deepseek-reasoner @ api.deepseek.com)',
+        name: 'DeepSeek Chat High-Speed Grounded Search Core (deepseek-chat @ api.deepseek.com)',
         url: `${DEEPSEEK_BASE_URL}/chat/completions`,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
         },
-        payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-reasoner', basePayload, dynamicTuning)
+        payload: DynamicParameterTuner.tuneGatewayPayload('deepseek-chat', basePayload, dynamicTuning)
       });
       candidateGateways.push({
         name: 'DeepSeek Chat Grounded Search Core (deepseek-chat @ api.deepseek.com)',

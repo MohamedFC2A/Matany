@@ -2200,52 +2200,52 @@ export class DynamicParameterTuner {
    * allows OpenRouter to immediately fail over at the edge to subsequent models if the primary
    * model experiences outages, 429 rate-limiting, or context overflow.
    */
-  public static getOpenRouterFallbackModels(primaryModel: string): string[] {
+  public static getOpenRouterFallbackModels(primaryModel: string, hasWebSearch = false): string[] {
     const cleanModel = (primaryModel || '').replace(/:online$/i, '').trim();
+
+    if (hasWebSearch) {
+      const candidates = [
+        cleanModel,
+        'google/gemini-2.5-flash',
+        'meta/muse-spark-1.2-contributor'
+      ];
+      return Array.from(new Set(candidates.filter(Boolean))).slice(0, 3);
+    }
 
     if (cleanModel.includes('muse-spark-1.3')) {
       return [
         cleanModel,
         'anthracite-org/magnum-v4-72b',
-        'meta/muse-spark-1.2-contributor',
         'google/gemini-2.5-flash'
-      ];
+      ].slice(0, 3);
     }
     if (cleanModel.includes('muse-spark-1.2')) {
       return [
         cleanModel,
         'meta/muse-spark-1.3-contributor',
-        'anthracite-org/magnum-v4-72b',
         'google/gemini-2.5-flash'
-      ];
+      ].slice(0, 3);
     }
     if (cleanModel.includes('magnum')) {
       return [
         cleanModel,
         'meta/muse-spark-1.3-contributor',
-        'meta/muse-spark-1.2-contributor'
-      ];
+        'google/gemini-2.5-flash'
+      ].slice(0, 3);
     }
-    if (cleanModel.includes('gemini-2.5-flash') || cleanModel.includes('gemini-2.5-pro')) {
+    if (cleanModel.includes('gemini')) {
       return [
         cleanModel,
         'meta/muse-spark-1.3-contributor',
         'anthracite-org/magnum-v4-72b'
-      ];
-    }
-    if (cleanModel.includes('qwen')) {
-      return [
-        cleanModel,
-        'meta/muse-spark-1.3-contributor',
-        'anthracite-org/magnum-v4-72b'
-      ];
+      ].slice(0, 3);
     }
 
     return [
       cleanModel || 'meta/muse-spark-1.3-contributor',
       'anthracite-org/magnum-v4-72b',
-      'meta/muse-spark-1.2-contributor'
-    ];
+      'google/gemini-2.5-flash'
+    ].slice(0, 3);
   }
 
   /**
@@ -2279,10 +2279,19 @@ export class DynamicParameterTuner {
         cleanPayload.transforms = ['middle-out'];
       }
 
-      // 3. OpenRouter Model Fallback Routing Chain
-      if (cleanPayload.model && (!cleanPayload.models || !Array.isArray(cleanPayload.models))) {
-        cleanPayload.models = this.getOpenRouterFallbackModels(cleanPayload.model);
+      const hasExplicitWebSearch = Boolean(
+        cleanPayload.enableWebSearch ||
+        cleanPayload.deepSearch ||
+        (Array.isArray(cleanPayload.tools) && cleanPayload.tools.some((t: any) => t.type === 'openrouter:web_search'))
+      );
+
+      // 3. OpenRouter Model Fallback Routing Chain (Strictly max 3 items allowed by OpenRouter)
+      if (cleanPayload.model && (!cleanPayload.models || !Array.isArray(cleanPayload.models) || hasExplicitWebSearch)) {
+        cleanPayload.models = this.getOpenRouterFallbackModels(cleanPayload.model, hasExplicitWebSearch);
         cleanPayload.route = 'fallback';
+      }
+      if (Array.isArray(cleanPayload.models)) {
+        cleanPayload.models = cleanPayload.models.slice(0, 3);
       }
 
       // 4. OpenRouter Provider Routing Engine
@@ -2290,11 +2299,21 @@ export class DynamicParameterTuner {
         cleanPayload.provider = {
           sort: 'latency',
           allow_fallbacks: true,
-          require_parameters: true,
+          require_parameters: !hasExplicitWebSearch,
           data_collection: 'allow'
         };
-      } else if (cleanPayload.provider.data_collection === 'deny') {
-        cleanPayload.provider.data_collection = 'allow';
+      } else {
+        if (cleanPayload.provider.data_collection === 'deny') {
+          cleanPayload.provider.data_collection = 'allow';
+        }
+        if (hasExplicitWebSearch) {
+          cleanPayload.provider.require_parameters = false;
+        }
+      }
+
+      // If web search is active, purge extra_body to prevent OpenRouter provider parameter mismatch (HTTP 404)
+      if (hasExplicitWebSearch) {
+        delete cleanPayload.extra_body;
       }
 
       // 5. OpenRouter Stream Usage Telemetry
@@ -2316,7 +2335,6 @@ export class DynamicParameterTuner {
       }
 
       // 7. OpenRouter Native Web Search Server Tool Integration (https://openrouter.ai/docs/features/server-tools/web-search)
-      const hasExplicitWebSearch = Boolean(cleanPayload.enableWebSearch || cleanPayload.deepSearch);
       const hasWebSearchInTools = Array.isArray(cleanPayload.tools) && cleanPayload.tools.some((t: any) => t.type === 'openrouter:web_search');
 
       if (hasExplicitWebSearch || hasWebSearchInTools) {

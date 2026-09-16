@@ -175,8 +175,9 @@ export function getFathomSearchContextualInfo(
   let displayTitle = 'Fathom Search From Web';
   if (queryMatch) {
     const cleanQ = queryMatch.replace(/["'[\]]/g, '').trim();
-    if (cleanQ && !/(?:قم\s*بتفعيل|بروتوكول|mcp|talabat)/i.test(cleanQ)) {
-      displayTitle = `Fathom Search From ${cleanQ.slice(0, 35)}`;
+    const isArabic = /[\u0600-\u06FF]/.test(cleanQ);
+    if (cleanQ && !isArabic && !/(?:قم\s*بتفعيل|بروتوكول|mcp|talabat)/i.test(cleanQ)) {
+      displayTitle = `Fathom Search From ${cleanQ.slice(0, 30)}`;
     }
   }
 
@@ -332,7 +333,10 @@ export function parseReasoningMilestones(
   const hasSearchDetected = hasFathomSearch ||
     /🔍\s*\[استعلام حي وتدقيق المصادر/i.test(cleaned) ||
     /\[(?:الاستعلام\s*الشبكي|Fathom\s*Search|Serper\s*AI)\]/i.test(cleaned) ||
-    /•\s*المصدر\s*\[\d+\]/i.test(cleaned);
+    /•\s*المصدر\s*\[\d+\]/i.test(cleaned) ||
+    /(?:أبحث\s*عن|البحث\s*عن|استعلام\s*عن)/i.test(cleaned) ||
+    (Array.isArray(activeMcps) && (activeMcps.includes('web_search') || activeMcps.includes('brave'))) ||
+    /(?:اخر|آخر)\s*(?:مباراة|أخبار|سعر|أحدث|النتائج|ترتيب)/i.test(promptText);
 
   let detectedSearchQuery = '';
   const queryMatch = cleaned.match(/\[(?:البحث عن|query)\s*:\s*["']?([^\]"']+)["']?\]/i) ||
@@ -612,9 +616,14 @@ function renderMilestoneTitle(text: string) {
     let target = searchMatch[2]?.trim() || 'Web';
     const suffix = searchMatch[3]?.trim();
 
+    // Strip leading "from", "of", "via", ":"
+    target = target.replace(/^(?:from|of|via|:)\s+/i, '').trim();
+
     // Normalize target: if it contains MCP keywords or prompt text, cleanly format as "MCPs"
     if (/(?:mcp|بروتوكول|talabat|github|linear|brave|قم\s*بتفعيل)/i.test(target)) {
       target = 'MCPs';
+    } else if (!target || /[\u0600-\u06FF]/.test(target)) {
+      target = 'Web';
     }
 
     return (
@@ -623,13 +632,10 @@ function renderMilestoneTitle(text: string) {
         <bdi dir="ltr" className="inline-flex items-center gap-1.5 font-sans align-baseline select-none">
           <span className="inline-flex items-center gap-1 font-black tracking-wide">
             <span className="bg-gradient-to-r from-cyan-300 via-sky-200 to-indigo-300 bg-clip-text text-transparent font-black tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-              Fathom
-            </span>
-            <span className="bg-gradient-to-b from-white via-zinc-100 to-zinc-300 bg-clip-text text-transparent font-black tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-              Search
+              Fathom Search
             </span>
           </span>
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-zinc-900 border border-zinc-700/60 text-cyan-300 font-mono font-bold text-[10.5px] sm:text-[11.5px] tracking-tight">
+          <span className="bg-gradient-to-r from-cyan-300 via-sky-200 to-indigo-300 bg-clip-text text-transparent font-black tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
             From {target}
           </span>
         </bdi>
@@ -738,9 +744,11 @@ export default function ChatReasoning({
   const isFathomSearchActive = useMemo(() => {
     return (
       activeFeatures.some(f => f.id === 'fathom_search') ||
-      /(?:\[?FATHOM\s*SEARCH\]?|Fathom\s*Search|\bFathomSearch\b|فاثوم\s*سيرش|\[LIVE\s*WEB\s*INTELLIGENCE\]|الاستعلام\s*الشبكي|المصادر\s*الموثقة|نتائج\s*البحث\s*الحي|•\s*المصدر\s*\[\d+\]|Fathom\s*Search\s*2\.0|🔍\s*\[استعلام حي وتدقيق المصادر)/i.test(fullText)
+      /(?:\[?FATHOM\s*SEARCH\]?|Fathom\s*Search|\bFathomSearch\b|فاثوم\s*سيرش|\[LIVE\s*WEB\s*INTELLIGENCE\]|الاستعلام\s*الشبكي|المصادر\s*الموثقة|نتائج\s*البحث\s*الحي|•\s*المصدر\s*\[\d+\]|Fathom\s*Search\s*2\.0|🔍\s*\[استعلام حي وتدقيق المصادر|أبحث\s*عن|البحث\s*عن|استعلام\s*عن)/i.test(fullText) ||
+      (Array.isArray(activeMcps) && (activeMcps.includes('web_search') || activeMcps.includes('brave'))) ||
+      /(?:اخر|آخر)\s*(?:مباراة|أخبار|سعر|أحدث|النتائج|ترتيب|متى\s*لعب|من\s*فاز)/i.test(previousUserPrompt)
     );
-  }, [activeFeatures, fullText]);
+  }, [activeFeatures, fullText, activeMcps, previousUserPrompt]);
 
   const isFathomSparkActive = useMemo(() => {
     if (activeFeatures.some(f => f.id === 'fathom_spark')) {
@@ -850,10 +858,10 @@ export default function ChatReasoning({
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
               <span className="font-mono text-[11px] sm:text-xs text-zinc-200 font-semibold tracking-tight">
                 {isThinking ? (
-                  <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 flex-wrap">
                     <span>
                       {isFathomSearchActive
-                        ? searchContextInfo.title
+                        ? renderMilestoneTitle(searchContextInfo.title)
                         : "جارٍ التفكير والاستدلال"}
                     </span>
                     {durationSeconds > 0 && (
@@ -866,10 +874,17 @@ export default function ChatReasoning({
                 ) : isSvgStudioActive ? (
                   "تم رسم وتوليد متجهات الرسم الشعاعي (SVG)"
                 ) : (
-                  <span>
-                    {isFathomSearchActive
-                      ? `${searchContextInfo.title} • فكّر لمدة ${durationSeconds} ثوانٍ`
-                      : (durationSeconds > 0 ? `فكّر لمدة ${durationSeconds} ثوانٍ` : "مسار الاستدلال والتفكير")}
+                  <span className="inline-flex items-center gap-1.5 flex-wrap">
+                    {isFathomSearchActive ? (
+                      <>
+                        {renderMilestoneTitle(searchContextInfo.title)}
+                        {durationSeconds > 0 && (
+                          <span className="text-zinc-400 font-normal">• فكّر لمدة {durationSeconds} ثوانٍ</span>
+                        )}
+                      </>
+                    ) : (
+                      durationSeconds > 0 ? `فكّر لمدة ${durationSeconds} ثوانٍ` : "مسار الاستدلال والتفكير"
+                    )}
                   </span>
                 )}
               </span>
