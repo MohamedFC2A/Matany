@@ -352,7 +352,9 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
     const hasAttachments = attachments.length > 0;
     const hasUrls = attachedUrls.length > 0;
     const isAnyAttachmentProcessing = attachments.some(a => a.isProcessing || (a.uploadProgress !== undefined && a.uploadProgress < 100));
-    const hasValue = (value.trim() !== "" || hasAttachments || hasUrls) && !isAnyAttachmentProcessing;
+    const trimmedText = value.trim();
+    const hasText = trimmedText.length >= 2;
+    const hasValue = (hasText || hasAttachments || hasUrls) && !isAnyAttachmentProcessing;
 
     // Detect if attachments contain videos, audio, or documents
     const hasNonImageMedia = attachments.some(a => a.mediaType === 'video' || a.mediaType === 'audio' || a.mediaType === 'document');
@@ -692,7 +694,7 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
       const allUrlsToSubmit = Array.from(new Set([...attachedUrls, ...inlineExtracted.urls])).slice(0, 5);
 
       if (isAnyAttachmentProcessing) return;
-      if (value.trim() === "" && !hasAttachments && allUrlsToSubmit.length === 0) return;
+      if (value.trim().length < 2 && !hasAttachments && allUrlsToSubmit.length === 0) return;
 
       let effectivePrompt = value.trim();
       if (inlineExtracted.urls.length > 0 && inlineExtracted.remainingText) {

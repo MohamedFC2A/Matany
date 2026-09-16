@@ -617,7 +617,9 @@ const MainAppContent: React.FC = () => {
       effectivePrompt += `\n\n[معطيات الرابط والمحتوى المرفق - ${rlPlatform}]:\n• العنوان: ${rlTitle}\n• صانع المحتوى / الحساب: ${rlAuthor}\n• الرابط: ${rlUrl}\n• ملخص / وصف المحتوى: ${rlDesc}`;
     }
 
-    if (!effectivePrompt && uniqueImagesDataUrls.length === 0 && attachedMediaList.length === 0) return;
+    const hasMediaOrLink = uniqueImagesDataUrls.length > 0 || attachedMediaList.length > 0 || Boolean(meta?.resolvedLink) || Boolean(meta?.targetUrl);
+    if (!effectivePrompt && !hasMediaOrLink) return;
+    if (trimmedText.length < 2 && !hasMediaOrLink) return;
 
     // Only extract target URL from user's explicitly typed text (never from code/file attachments)
     const detectedUrlInfo = detectAndExtractUrl(trimmedText);

@@ -392,23 +392,11 @@ const SingleLinkCard: React.FC<SingleLinkCardProps> = ({ url, linkIndex, onConfi
         <ExternalLink className="w-3.5 h-3.5 text-zinc-400 group-hover/target:text-white shrink-0 opacity-75 group-hover/target:opacity-100 transition-opacity" />
       </button>
 
-      {resolvedInfo && (
+      {resolvedInfo?.title && (
         <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[10px] text-zinc-300 font-sans">
-          {resolvedInfo.title && (
-            <span className="truncate max-w-[260px] sm:max-w-[360px] text-zinc-300 font-medium bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06]" title={resolvedInfo.title}>
-              {resolvedInfo.title}
-            </span>
-          )}
-          {resolvedInfo.frameworks?.coreFramework?.map((fw, idx) => (
-            <span key={`fw-${idx}`} className="bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 px-1.5 py-0.5 rounded text-[9px] font-mono font-medium">
-              {fw}
-            </span>
-          ))}
-          {resolvedInfo.frameworks?.componentLibraries?.map((lib, idx) => (
-            <span key={`lib-${idx}`} className="bg-purple-500/10 text-purple-300 border border-purple-500/20 px-1.5 py-0.5 rounded text-[9px] font-mono font-medium">
-              {lib}
-            </span>
-          ))}
+          <span className="truncate max-w-[260px] sm:max-w-[360px] text-zinc-300 font-medium bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06]" title={resolvedInfo.title}>
+            {resolvedInfo.title}
+          </span>
         </div>
       )}
     </div>
