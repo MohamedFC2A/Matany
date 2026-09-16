@@ -72,9 +72,21 @@ export default async function handler(req: any, res?: any) {
     } else if (typeof rawPrompt === 'object' && rawPrompt !== null) {
       rawPrompt = rawPrompt.text || rawPrompt.prompt || '';
     }
-    const prompt = typeof rawPrompt === 'string' ? rawPrompt.trim() : '';
+    let prompt = typeof rawPrompt === 'string' ? rawPrompt.trim() : '';
+    prompt = prompt
+      .replace(/\[AUTHORITATIVE[\s\S]*?\][\s\S]*?(?=(?:\n\n\[AUTHORITATIVE)|$)/gi, '')
+      .replace(/\[(?:المرفق في هذا الطلب الحالي|عدد الصور المرفقة|ملاحظة سياقية|إطارات ولقطات بصرية).*?\]/g, '')
+      .replace(/---\s*\[.*?\]\s*---/g, '')
+      .trim();
+
     if (!prompt) {
       return sendResponse(400, { error: 'Prompt is required' });
+    }
+
+    const isQuestionInquiry = /^(?:اي|أي|ما|ماذا|كيف|لماذا|ليه|هل|اشرح|شرح|what|why|how)\b/i.test(prompt) &&
+      !/(?:صورة|صوره|خلفية|رسم|image|photo|picture|wallpaper|draw|paint)/i.test(prompt);
+    if (isQuestionInquiry) {
+      return sendResponse(400, { error: 'Inquiries or questions cannot be rendered as images' });
     }
 
     const openRouterKey = process.env.OPENROUTER_API_KEY || '';

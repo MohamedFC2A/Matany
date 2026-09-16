@@ -596,6 +596,41 @@ func main() {
       }
     });
 
+    await harness.it('Inquiry Disambiguation: questions about options ("اي فائدة الخيار ده") NEVER trigger Neural Image Studio or Image Intent', () => {
+      const inquiryPrompts = [
+        'اي فائدة الخيار ده',
+        'ما فائدة هذا الخيار',
+        'كيف يعمل خيار التفعيل',
+        'اشرح لي هذا الخيار',
+        'ما هو الخيار الأفضل',
+        'ايش فايدة هذا الخيار',
+        'اي فائدة الخيار ده\n\n[AUTHORITATIVE LINEAR MCP PROTOCOL ENGAGED]:\nLinear project intelligence is active.\n- Provide direct project planning, issue tracking, and sprint/cycle management insights immediately.\n- STRICT PROHIBITION: NEVER ask for tool execution permission or output dummy tool blocks. Deliver actionable solutions directly.'
+      ];
+
+      const historyWithImage = [
+        { role: 'user', content: 'صمم لي سيارة رياضية' },
+        { role: 'assistant', content: '```neural-image\n{\n  "title": "تصميم: سيارة",\n  "imageUrl": "https://example.com/car.png",\n  "seed": 482910\n}\n```' }
+      ];
+
+      for (const prompt of inquiryPrompts) {
+        expect(DynamicParameterTuner.isImageGenerationOrEditIntent(prompt)).toBe(false);
+
+        const tunedNoHistory = DynamicParameterTuner.tune({
+          userPrompt: prompt,
+          requestedModel: 'fathom-quant-3'
+        });
+        expect(tunedNoHistory.detectedIntent).not.toBe('NEURAL_IMAGE_STUDIO_AND_PROCESSING');
+        expect(tunedNoHistory.detectedIntent).not.toBe('SVG_VECTOR_STUDIO_AND_DESIGN');
+
+        const tunedWithHistory = DynamicParameterTuner.tune({
+          userPrompt: prompt,
+          requestedModel: 'fathom-quant-3',
+          conversationHistory: historyWithImage
+        });
+        expect(tunedWithHistory.detectedIntent).not.toBe('NEURAL_IMAGE_STUDIO_AND_PROCESSING');
+      }
+    });
+
     await harness.it('Active MCP Reasoning Milestones: correctly identifies and surfaces active MCP protocols in reasoning steps', () => {
       const milestones = parseReasoningMilestones(
         'جاري فحص الطلب واستدعاء الأدوات المطلوبة',

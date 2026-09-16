@@ -207,8 +207,19 @@ export async function executeResilientImageGeneration(
   const apiKey = options.openRouterApiKey;
   const baseUrl = options.openRouterBaseUrl || 'https://openrouter.ai/api/v1';
   let finalPrompt = (options.prompt || '').trim();
+  finalPrompt = finalPrompt
+    .replace(/\[AUTHORITATIVE[\s\S]*?\][\s\S]*?(?=(?:\n\n\[AUTHORITATIVE)|$)/gi, '')
+    .replace(/\[(?:المرفق في هذا الطلب الحالي|عدد الصور المرفقة|ملاحظة سياقية|إطارات ولقطات بصرية).*?\]/g, '')
+    .replace(/---\s*\[.*?\]\s*---/g, '')
+    .trim();
   if (!finalPrompt) {
     return { error: 'Prompt is required', status: 400 };
+  }
+
+  const isQuestionInquiry = /^(?:اي|أي|ما|ماذا|كيف|لماذا|ليه|هل|اشرح|شرح|what|why|how)\b/i.test(finalPrompt) &&
+    !/(?:صورة|صوره|خلفية|رسم|image|photo|picture|wallpaper|draw|paint)/i.test(finalPrompt);
+  if (isQuestionInquiry) {
+    return { error: 'Inquiries or questions cannot be rendered as images', status: 400 };
   }
 
   // 1. Autonomous Prompt Translation & Enhancement for Arabic

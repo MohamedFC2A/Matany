@@ -15,7 +15,7 @@ import {
   classifyContextualQueryIntent,
   resolveMultiTurnQuery,
   extractCleanSearchQuery
-} from './searchEngine';
+} from './searchEngine/index';
 
 export interface ExtractedSearchContext {
   shouldSearch: boolean;
@@ -180,19 +180,27 @@ export const NEURAL_IMAGE_PATTERNS = [
 ];
 
 export const CONTEXTUAL_IMAGE_EDIT_PATTERNS = [
-  /(?:غير|غيرلي|عدل|عدلي|تعديل|تغيير|بدل|بدلي|تبديل|استبدل|احذف|امسح|شيل|ازالة|إزالة|عزل|اعزل|خلي|خليه|خلها|خليها|خليهم|اجعل|اجعله|اجعلها|اجعلهم|سوي|سوه|سوها|حول|تحويل|صبغ|لون|صلح|اصلاح|ظبط|عايز|عايزها|عايزه|عاوز|عاوزها|عاوزه|اريد|أريد|اريدها|أريدها|اريده|أريده|ابغى|ابغا|ابغي|ابغاها|ابغاه|بدي\s*اياها|بدي|نبي|نبيها|edit|modify|change|replace|remove|recolor|restyle|inpaint)/i,
-  /(?:عدل\s+عليها|غير\s+فيها|بدل\s+فيها|عدل\s+فيها|غير\s+لون|بدل\s+لون|عدل\s+لون|غير\s+شكل|بدل\s+شكل|غير\s+الخلفية|بدل\s+الخلفية|امسح\s+الـ|احذف\s+الـ|شيل\s+الـ|خليها\s+بالليل|خليه\s+بالليل|خليه\s+في\s+النهار|خليها\s+في\s+النهار|خليها\s+في\s+الليل)/i,
-  /(?:ذهبي|ذهبيه|ذهبية|أحمر|احمر|حمرا|حمراء|أزرق|ازرق|زرقا|زرقاء|أخضر|اخضر|خضرا|خضراء|أصفر|اصفر|صفرا|صفراء|أسود|اسود|سودا|سوداء|أبيض|ابيض|بيضا|بيضاء|فضي|فضيه|فضية|كحلي|رمادي|مات|مطفي|لامع|كروم|كربون\s*فايبر|وردي|بنفسجي|برتقالي|بني)/i,
-  /(?:بدون\s*(?:دخان|خلفية|سيارات|ناس|اضاءة|إضاءة|مطر)|مع\s*(?:دخان|مطر|ثلج)|بالليل|بالنهار|في\s*الليل|في\s*النهار|وقت\s*الغروب|وقت\s*الشروق|تحت\s*المطر|على\s*البحر)/i,
-  /(?:لوحة|لوحه|نمرة|نمره|لوحة\s*مصرية|لوحه\s*مصريه|مصرية|مصريه|لوحة\s*سيارة|نمرة\s*عربية|license\s*plate|car\s*plate|plate)/i,
-  /(?:مش\s*ظاهرة|لم\s*تظهر|ما\s*ظهرت|مظهرتش|فين\s*الصورة|الصورة\s*فين|أعد\s*(?:المحاولة|توليد|إنشاء|انشاء|التعديل|الإنشاء)|اعد\s*(?:المحاولة|توليد|إنشاء|انشاء|التعديل|الإنشاء)|كرر|حاول\s*تاني|جرب\s*تاني|الصورة\s*معلقة|الصورة\s*بايظة|مش\s*باينة|ما\s*بانت|مش\s*شغالة|not\s*showing|retry|regenerate|re-generate|generate\s*again|try\s*again)/i,
-  /\b(?:edit\s+(?:it|this|the\s+image|the\s+photo)|modify\s+(?:it|this)|change\s+(?:it|the\s+color|the\s+background)|replace\s+the|remove\s+the|make\s+it\s+(?:night|day|red|blue|dark|bright|gold|golden|silver|matte|glossy|egyptian))\b/i
+  // 1. Direct contextual edit phrases on image attributes (change color, background, style)
+  /(?:عدل\s+عليها|غير\s+فيها|بدل\s+فيها|عدل\s+فيها|غير\s+لون|بدل\s+لون|عدل\s+لون|غير\s+شكل|بدل\s+شكل|غير\s+الخلفية|بدل\s+الخلفية|امسح\s+الـ|احذف\s+الـ|شيل\s+الـ)/i,
+  // 2. Modifying visual lighting / time of day
+  /(?:خليها|خليه|اجعلها|اجعله|سوها|سوه)\s+(?:بالليل|بالنهار|في\s+الليل|في\s+النهار|وقت\s+الغروب|وقت\s+الشروق|تحت\s+المطر|على\s+البحر|في\s+الثلج|في\s+الصحراء|في\s+الفضاء)/i,
+  // 3. Changing color or appearance of an item in the image (e.g. "خلي لون السيارة أسود", "خليه أحمر", "اجعل الفستان أزرق", "اجعل اللوحة مصرية")
+  /(?:خلي|خليه|خلها|خليها|اجعل|اجعله|اجعلها|سوي|سوه|سوها|صبغ|لون)\s+(?:لي\s+)?(?:لون\s+)?(?:السيارة|العربية|القميص|الفستان|الشعر|العين|البنطلون|الباب|الجدار|اللوحة|الخلفية|اللوحه|النمرة)?\s*(?:ذهبي|ذهبيه|ذهبية|أحمر|احمر|حمرا|حمراء|أزرق|ازرق|زرقا|زرقاء|أخضر|اخضر|خضرا|خضراء|أصفر|اصفر|صفرا|صفراء|أسود|اسود|سودا|سوداء|أبيض|ابيض|بيضا|بيضاء|فضي|فضيه|فضية|كحلي|رمادي|مات|مطفي|لامع|كروم|كربون\s*فايبر|وردي|بنفسجي|برتقالي|بني|مصرية|مصريه|سعودية|سعوديه)/i,
+  // 4. In-scene ambient changes (e.g. "بدون دخان", "مع مطر ودخان")
+  /(?:بدون\s*(?:دخان|خلفية|سيارات|ناس|اضاءة|إضاءة|مطر|أشجار)|مع\s*(?:دخان|مطر|ثلج|ضباب|غيوم))/i,
+  // 5. Image regeneration / retry requests
+  /(?:مش\s*ظاهرة|لم\s*تظهر|ما\s*ظهرت|مظهرتش|فين\s*الصورة|الصورة\s*فين|أعد\s*(?:المحاولة|توليد|إنشاء|انشاء|التعديل|الإنشاء)\s*(?:للصورة)?|اعد\s*(?:المحاولة|توليد|إنشاء|انشاء|التعديل|الإنشاء)\s*(?:للصورة)?|الصورة\s*معلقة|الصورة\s*بايظة|مش\s*باينة|ما\s*بانت|مش\s*شغالة)/i,
+  // 6. English edit directives with explicit visual targets
+  /\b(?:edit\s+(?:it|this|the\s+image|the\s+photo)|modify\s+(?:it|this|the\s+image|the\s+photo)|change\s+(?:the\s+color|the\s+background|the\s+style)|replace\s+the\s+(?:background|color|car|face)|remove\s+the\s+(?:background|person|object)|make\s+it\s+(?:night|day|red|blue|dark|bright|gold|golden|silver|matte|glossy|egyptian))\b/i
 ];
 
 export const CONTEXTUAL_IMAGE_ADDITION_PATTERNS = [
-  /(?:ضيف|ضيفلي|اضف|أضف|إضافة|اضافة|حط|حطلي|حطله|حطلها|ضع|ركب|ركبلي|زود|زوّد|ادمج|اجمع|دخل|أدخل|دخلها|add|insert|put|append|include|combine)/i,
-  /(?:ضيف\s+عليها|حط\s+عليها|ضيف\s+فيها|حط\s+فيها|ركب\s+عليها|زود\s+عليها|ضيف\s+جنب|حط\s+جنب|ضيف\s+مع|حط\s+مع|أضف\s+إلى|أضف\s+الي|إضافة\s+إلى|اضافة\s+الي)/i,
-  /\b(?:add\s+(?:to\s+it|a\s+person|a\s+tree|an\s+object|rain|mist|car)|put\s+(?:on\s+it|next\s+to)|insert\s+into)\b/i
+  // Arabic addition with explicit target or visual noun
+  /(?:ضيف|ضيفلي|أضف|اضف|أضيف|اضيف|إضافة|اضافة|حط|حطلي|حطله|حطلها|ركب|ركبلي|زود|زوّد|ادمج|أدخل|ادخل)\s+(?:لي\s+)?(?:في\s+الصورة|على\s+الصورة|بالصورة|فيها|عليها|جنبها|معاها|فوقها|تحتها|شخص|سيارة|شجرة|خلفية|سحاب|مطر|نور|إضاءة|لوحة|دخان|ثلج|شمس|قمر|طائرة|طيارة|درون|طائر|عصفور|بحر|جبل|نهر)/i,
+  /(?:ضيف\s+عليها|حط\s+عليها|ضيف\s+فيها|حط\s+فيها|ركب\s+عليها|زود\s+عليها|ضيف\s+جنب|حط\s+جنب|ضيف\s+مع|حط\s+مع|أضف\s+إلى|اضف\s+إلى|أضف\s+الي|اضف\s+الي|إضافة\s+إلى|اضافة\s+الي)/i,
+  /(?:ضيف|أضف|اضف|أضيف|اضيف|حط|ركب|زود)\s+(?:لي\s+)?(?:[\p{L}\p{N}\s]{1,30})\s*(?:تحلق|يقف|تقف|تجلس|يجلس|يمشي|تطير|يطير|تجري|يجري|فوق|تحت|بجانب|جنب|مع|في\s+المشهد|في\s+الصورة|على\s+الصورة)/iu,
+  // English addition with explicit boundaries and visual targets
+  /\b(?:add\s+(?:to\s+it|a\s+person|a\s+tree|an\s+object|rain|mist|smoke|car|background|drone)|put\s+(?:on\s+it|next\s+to\s+it)|insert\s+(?:into\s+it|into\s+the\s+image))\b/i
 ];
 
 export const NEURAL_IMAGE_GENERATION_PATTERNS = [
@@ -291,17 +299,51 @@ export interface PedagogicalExamContext {
 
 export class DynamicParameterTuner {
   /**
+   * Strips authoritative protocol instructions, MCP banners, and internal metadata badges
+   * to isolate the pure, raw user query.
+   */
+  public static extractPureUserText(text: string): string {
+    if (!text || typeof text !== 'string') return '';
+    return text
+      .replace(/\[AUTHORITATIVE[\s\S]*?\][\s\S]*?(?=(?:\n\n\[AUTHORITATIVE)|$)/gi, '')
+      .replace(/\[(?:المرفق في هذا الطلب الحالي|عدد الصور المرفقة|ملاحظة سياقية|إطارات ولقطات بصرية).*?\]/g, '')
+      .replace(/---\s*\[.*?\]\s*---/g, '')
+      .replace(/\[(?:ATTACHED_IMAGES|IMAGE_CONTEXT)[\s\S]*?\]/gi, '')
+      .trim();
+  }
+
+  /**
    * Deterministically checks whether user input expresses image generation, creation, or editing intent.
+   * Strictly disambiguates questions, explanations, coding, and general inquiries so they NEVER trigger image studio.
    */
   public static isImageGenerationOrEditIntent(text: string): boolean {
     if (!text || typeof text !== 'string') return false;
-    const t = text.trim();
-    if (!t) return false;
+    const pure = this.extractPureUserText(text);
+    if (!pure) return false;
+
+    // Strict Question & Inquiry Disambiguation:
+    // If the prompt is a general question, inquiry, or explanation request ("اي فائدة", "ما فائدة", "كيف", "لماذا", "ليه", "اشرح", "what is", "how to", "why"),
+    // it is NEVER an image intent unless it contains an explicit imperative image generation/drawing verb!
+    const isQuestionOrInquiry = /^(?:اي|أي|ما|ماذا|كيف|لماذا|ليه|هل|اشرح|شرح|وضح|فسر|معنى|ماذا\s*تعني|what|why|how|explain|can\s+you\s+explain)\b/i.test(pure) ||
+      /\b(?:اي\s*فائدة|ما\s*فائدة|فائدة|ماهي\s*فائدة|ما\s*المقصود|ايش\s*فايدة)\b/i.test(pure);
+
+    const hasExplicitImperativeImageCreation = /(?:صمم\s*صورة|انشئ\s*صورة|أنشئ\s*صورة|ولد\s*صورة|اعمل\s*صورة|ارسم\s*صورة|توليد\s*صورة|generate\s*(?:an?\s*)?image|create\s*(?:an?\s*)?image|draw\s*(?:an?\s*)?image|make\s*(?:an?\s*)?image)\b/i.test(pure);
+
+    if (isQuestionOrInquiry && !hasExplicitImperativeImageCreation) {
+      return false;
+    }
+
+    // Technical / coding / system queries guard
+    const isTechnicalOrCode = /(?:كود|برمجة|دالة|موقع|صفحة|واجهة|html|css|js|ts|python|react|api|bug|error|قاعدة|database|خطة|مقال)\b/i.test(pure);
+    if (isTechnicalOrCode && !hasExplicitImperativeImageCreation) {
+      return false;
+    }
+
     return (
-      NEURAL_IMAGE_PATTERNS.some(p => p.test(t)) ||
-      NEURAL_IMAGE_GENERATION_PATTERNS.some(p => p.test(t)) ||
-      CONTEXTUAL_IMAGE_EDIT_PATTERNS.some(p => p.test(t)) ||
-      CONTEXTUAL_IMAGE_ADDITION_PATTERNS.some(p => p.test(t))
+      NEURAL_IMAGE_PATTERNS.some(p => p.test(pure)) ||
+      NEURAL_IMAGE_GENERATION_PATTERNS.some(p => p.test(pure)) ||
+      CONTEXTUAL_IMAGE_EDIT_PATTERNS.some(p => p.test(pure)) ||
+      CONTEXTUAL_IMAGE_ADDITION_PATTERNS.some(p => p.test(pure))
     );
   }
 
@@ -965,9 +1007,15 @@ export class DynamicParameterTuner {
     extractedSearchContext?: ExtractedSearchContext;
   } {
     const text = (request.userPrompt || '').trim();
+    const pureUserText = this.extractPureUserText(text);
     const isMatany = Boolean(request.isMatanyMode);
     const hasImages = Boolean(request.hasMultimodalImages);
     const hasMediaOrZip = Boolean(request.hasVideoOrAudio || request.hasZipOrCodeFiles);
+
+    const isQuestionOrInquiry = /^(?:اي|أي|ما|ماذا|كيف|لماذا|ليه|هل|اشرح|شرح|وضح|فسر|معنى|ماذا\s*تعني|what|why|how|explain|can\s+you\s+explain)\b/i.test(pureUserText) ||
+      /\b(?:اي\s*فائدة|ما\s*فائدة|فائدة|ماهي\s*فائدة|ما\s*المقصود|ايش\s*فايدة)\b/i.test(pureUserText);
+
+    const hasExplicitImperativeImageCreation = /(?:صمم\s*صورة|انشئ\s*صورة|أنشئ\s*صورة|ولد\s*صورة|اعمل\s*صورة|ارسم\s*صورة|توليد\s*صورة|generate\s*(?:an?\s*)?image|create\s*(?:an?\s*)?image|draw\s*(?:an?\s*)?image|make\s*(?:an?\s*)?image)\b/i.test(pureUserText);
 
     // Multi-turn context extraction from conversation history
     const historySnippets = (request.conversationHistory || [])
@@ -1037,13 +1085,13 @@ export class DynamicParameterTuner {
       const isPureInspectionOrOcrQuery = /(?:ما\s+(?:هذا|هذه|نوع|موديل|تفاصيل|المكتوب|النص|الموجود|في\s+الصورة)|اشرح\s+(?:الصورة|المحتوى|الشكل)|حلل\s+الصورة|فحص\s+الصورة|استخرج\s+النصوص?|اقرأ\s+(?:النص|الكتابة|المكتوب|الورقة|المستند)|ترجم\s+ما\s+في|حل\s+(?:المسألة|السؤال|المعادلة|الكود)|هل\s+هذا|من\s+(?:هذا|في\s+الصورة)|what\s+is|explain\s+this|read\s+text|ocr|extract\s+text|analyze\s+image|transcribe)/i.test(text);
 
       // 3. Cyber Ultra Sovereign Neural Image Studio & Processing (Inpainting, Recoloring, Background Removal, 4K Upscale, Compositing, Product/Text Edit, License Plate Edit)
-      const isNeuralImageEditRequest = !isPureInspectionOrOcrQuery && (
-        NEURAL_IMAGE_PATTERNS.some(p => p.test(text)) ||
-        CONTEXTUAL_IMAGE_EDIT_PATTERNS.some(p => p.test(text)) ||
-        CONTEXTUAL_IMAGE_ADDITION_PATTERNS.some(p => p.test(text)) ||
-        /(?:اجعل|خلي|سوي|غير|عدل|بدل|استبدل|امسح|احذف|شيل|ضيف|حط|ركب|لون|صبغ|حول|صلح|ظبط)/i.test(text) ||
-        /(?:لوحة|لوحه|نمرة|نمره|رقم|ارقام|أرقام|شعار|لوجو|license\s*plate|plate|مصرية|مصريه|سعودية|سعوديه)/i.test(text) ||
-        /(?:عدل|تعديل|غير|تغيير|بدل|تبديل|ادخل|أدخل|اضف|أضف|احذف|شيل)\s+(?:لي\s+)?(?:في\s+الصورة|على\s+الصورة|بالصورة|فيها|الصورة\s+المرفقة|الصورة\s+دي)/i.test(text)
+      const isNeuralImageEditRequest = !isPureInspectionOrOcrQuery && (!isQuestionOrInquiry || hasExplicitImperativeImageCreation) && (
+        NEURAL_IMAGE_PATTERNS.some(p => p.test(pureUserText)) ||
+        CONTEXTUAL_IMAGE_EDIT_PATTERNS.some(p => p.test(pureUserText)) ||
+        CONTEXTUAL_IMAGE_ADDITION_PATTERNS.some(p => p.test(pureUserText)) ||
+        /(?:اجعل|خلي|خليه|خلها|خليها|سوي|سوه|سوها|غير|غيرلي|عدل|عدلي|بدل|بدلي|استبدل|امسح|احذف|شيل|ضيف|أضيف|اضيف|اضف|أضف|حط|حطلي|ضع|ركب|ركبلي|لون|صبغ|حول|صلح|ظبط)/i.test(pureUserText) ||
+        /(?:لوحة|لوحه|نمرة|نمره|رقم|ارقام|أرقام|شعار|لوجو|license\s*plate|plate|مصرية|مصريه|سعودية|سعوديه)/i.test(pureUserText) ||
+        /(?:عدل|تعديل|غير|تغيير|بدل|تبديل|ادخل|أدخل|اضف|أضف|احذف|شيل)\s+(?:لي\s+)?(?:في\s+الصورة|على\s+الصورة|بالصورة|فيها|الصورة\s+المرفقة|الصورة\s+دي)/i.test(pureUserText)
       );
 
       if (isNeuralImageEditRequest) {
@@ -1068,11 +1116,11 @@ export class DynamicParameterTuner {
     const priorNeuralImage = this.extractPriorNeuralImage(request.conversationHistory || []);
     const isExplicitSvgKeyword = /(?:svg|فيكتور|متجهات|شعاعي|vector)/i.test(text);
     const isCodeOrTextFollowup = !isExplicitSvgKeyword && /(?:كود|برمجة|دالة|ملف|موقع|صفحة|واجهة|html|css|js|ts|python|react|api|bug|error|خطأ|مشكلة|خطة|مقال|نص|شرح|database|قاعدة|قواعد|تقرير|جدول|فحص|بحث|استعلام)/i.test(text);
-    const hasVisualTargetInText = /(?:في\s+الصورة|على\s+الصورة|بالصورة|الصورة\s+دي|الصورة\s+المرفقة|الصورة\s+السابقة|الصورة|الخلفية|لون|الوان|ألوان|القميص|الفستان|السيارة|العربية|الشعر|العين|البنطلون|الباب|الجدار|اللوحة|الملامح|البشرة|وجه|شخص|مطر|دخان|ثلج|بالليل|بالنهار|license\s*plate|photo|image)/i.test(text);
+    const hasVisualTargetInText = /(?:في\s+الصورة|على\s+الصورة|بالصورة|الصورة\s+دي|الصورة\s+المرفقة|الصورة\s+السابقة|الصورة|الخلفية|لون|الوان|ألوان|القميص|الفستان|السيارة|العربية|الشعر|العين|البنطلون|الباب|الجدار|اللوحة|الملامح|البشرة|وجه|شخص|مطر|دخان|ثلج|بالليل|بالنهار|license\s*plate|photo|image)/i.test(pureUserText);
 
-    const isContextualImageEditOrAdd = Boolean(priorNeuralImage) && !isCodeOrTextFollowup && (
-      (hasVisualTargetInText && (CONTEXTUAL_IMAGE_EDIT_PATTERNS.some(p => p.test(text)) || CONTEXTUAL_IMAGE_ADDITION_PATTERNS.some(p => p.test(text)))) ||
-      NEURAL_IMAGE_PATTERNS.some(p => p.test(text))
+    const isContextualImageEditOrAdd = Boolean(priorNeuralImage) && !isCodeOrTextFollowup && (!isQuestionOrInquiry || hasExplicitImperativeImageCreation) && (
+      (hasVisualTargetInText && (CONTEXTUAL_IMAGE_EDIT_PATTERNS.some(p => p.test(pureUserText)) || CONTEXTUAL_IMAGE_ADDITION_PATTERNS.some(p => p.test(pureUserText)))) ||
+      NEURAL_IMAGE_PATTERNS.some(p => p.test(pureUserText))
     );
 
     if (isContextualImageEditOrAdd && !/(?:svg|فيكتور|متجهات|vector)/i.test(text)) {
@@ -1210,10 +1258,10 @@ export class DynamicParameterTuner {
     // 6.c. Cyber Ultra & Fathom Quant Neural Image Studio & Photorealistic Generation Check
     const isCodeOrHowToQuery = /(?:كود|برمجة|دالة|مكتبة|بايثون|جافاسكريبت|رياكت|api|endpoint|code|script|component|function)\b/i.test(text) ||
       /^(?:كيف|طريقة|شرح|اشرح|لماذا|ليه|ما\s*هو|ما\s*هي|ماذا\s*يعني|ما\s*الفرق|how\s+to|explain|why|what\s+is)\b/i.test(text);
-    const hasExplicitCreateCmd = /(?:صمم|صممي|انشئ|أنشئ|ولد|توليد|اعمل|اعملي|سوي|سويلي|طلع|طلعلي|اريد|أريد|عايز|عاوز|بدي|محتاج|تخيل|ارسم|ارسمي|هات|جهز|صنع|create|generate|design|draw|make|render)\s+(?:لي\s+)?(?:صورة|صوره|خلفية|خلفيه|لوحة|بورتريه|photo|image|picture|wallpaper|portrait)/i.test(text);
+    const hasExplicitCreateCmd = /(?:صمم|صممي|انشئ|أنشئ|ولد|توليد|اعمل|اعملي|سوي|سويلي|طلع|طلعلي|اريد|أريد|عايز|عاوز|بدي|محتاج|تخيل|ارسم|ارسمي|هات|جهز|صنع|create|generate|design|draw|make|render)\s+(?:لي\s+)?(?:صورة|صوره|خلفية|خلفيه|لوحة|بورتريه|photo|image|picture|wallpaper|portrait)/i.test(pureUserText);
 
-    const matchesNeuralGen = !isExplicitSvgRequested && (!isCodeOrHowToQuery || hasExplicitCreateCmd) && !isCodeOrTextFollowup && (
-      NEURAL_IMAGE_GENERATION_PATTERNS.some(p => p.test(text)) ||
+    const matchesNeuralGen = !isExplicitSvgRequested && (!isCodeOrHowToQuery || hasExplicitCreateCmd) && !isCodeOrTextFollowup && (!isQuestionOrInquiry || hasExplicitCreateCmd) && (
+      NEURAL_IMAGE_GENERATION_PATTERNS.some(p => p.test(pureUserText)) ||
       (isFollowUpPrompt && !isSvgHistoryFollowup && hasVisualTargetInText && NEURAL_IMAGE_GENERATION_PATTERNS.some(p => p.test(historyText)))
     );
 

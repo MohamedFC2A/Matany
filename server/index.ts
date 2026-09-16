@@ -2823,6 +2823,13 @@ app.post('/api/chat', async (req: Request, res: Response) => {
 
   const priorNeuralImage = DynamicParameterTuner.extractPriorNeuralImage(cleanedMessages);
 
+  // Check if CURRENT user message specifically has an image payload (avoid poisoning entire multi-turn conversation)
+  const currentTurnHasImage = Boolean(
+    lastUserMsg?.image ||
+    (lastUserMsg?.images && lastUserMsg.images.length > 0) ||
+    (Array.isArray(lastUserMsg?.content) && lastUserMsg.content.some((c: any) => c?.type === 'image_url' || c?.image_url))
+  );
+
   const hasMultimodal = cleanedMessages.some((m: any) => {
     if (Array.isArray(m.content)) {
       return m.content.some((c: any) => c.type === 'image_url' || c.image_url);
@@ -2842,7 +2849,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     requestedModel: model,
     isMatanyMode: isEffectiveMatanyMode,
     deepSearch,
-    hasMultimodalImages: hasMultimodal || isVision,
+    hasMultimodalImages: currentTurnHasImage || isVision,
     hasZipOrCodeFiles: hasZipOrMedia,
     explicitTemperature: typeof req.body.temperature === 'number' ? req.body.temperature : undefined,
   });
@@ -3891,16 +3898,30 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     }
 
     // Autonomous Server-Side Recovery Guard for Neural Image Studio:
-    const isImageIntent = dynamicTuning.detectedIntent === 'NEURAL_IMAGE_STUDIO_AND_PROCESSING' ||
-      DynamicParameterTuner.isImageGenerationOrEditIntent(lastUserText);
+    // Strictly requires explicit imperative image creation/edit commands AND forbids inquiries or responses that already have substantive text.
+    const pureUserText = DynamicParameterTuner.extractPureUserText(lastUserText);
+    const isQuestionOrInquiry = /^(?:اي|أي|ما|ماذا|كيف|لماذا|ليه|هل|اشرح|شرح|وضح|فسر|معنى|ماذا\s*تعني|what|why|how|explain|can\s+you\s+explain)\b/i.test(pureUserText) ||
+      /\b(?:اي\s*فائدة|ما\s*فائدة|فائدة|ماهي\s*فائدة|ما\s*المقصود|ايش\s*فايدة)\b/i.test(pureUserText);
+    const hasExplicitImageCreationDemand = /(?:صمم\s*صورة|انشئ\s*صورة|أنشئ\s*صورة|ولد\s*صورة|اعمل\s*صورة|ارسم\s*صورة|توليد\s*صورة|generate\s*(?:an?\s*)?image|create\s*(?:an?\s*)?image|draw\s*(?:an?\s*)?image)\b/i.test(pureUserText);
+    const substantiveTextLength = fullServerContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim().length;
+
+    const priorImg = dynamicTuning.priorNeuralImage || priorNeuralImage;
+    const userUploadedMsg = cleanedMessages.slice().reverse().find((m: any) => m.image || (m.images && m.images.length > 0));
+    const uploadedUrl = userUploadedMsg?.image || (userUploadedMsg?.images && userUploadedMsg.images[0]) || '';
+    const hasExplicitImageEditDemand = Boolean(priorImg?.imageUrl || uploadedUrl) &&
+      /(?:عدل\s+على\s+الصورة|غير\s+في\s+الصورة|عدل\s+الصورة|تعديل\s+الصورة|تغيير\s+الصورة|edit\s+(?:this\s+|the\s+)?image|modify\s+(?:this\s+|the\s+)?image)\b/i.test(pureUserText);
+
+    const isImageIntent = dynamicTuning.detectedIntent === 'NEURAL_IMAGE_STUDIO_AND_PROCESSING' &&
+      DynamicParameterTuner.isImageGenerationOrEditIntent(pureUserText) &&
+      !isQuestionOrInquiry &&
+      substantiveTextLength < 80 &&
+      (hasExplicitImageCreationDemand || hasExplicitImageEditDemand);
+
     if (isImageIntent) {
       const hasNeuralBlock = fullServerContent.includes('neural-image') || fullServerContent.includes('neural_image');
       if (!hasNeuralBlock) {
-        const priorImg = dynamicTuning.priorNeuralImage || priorNeuralImage;
         const priorSeed = priorImg?.seed !== undefined ? priorImg.seed : 482910;
         const priorImgUrl = priorImg?.imageUrl || '';
-        const userUploadedMsg = cleanedMessages.slice().reverse().find((m: any) => m.image || (m.images && m.images.length > 0));
-        const uploadedUrl = userUploadedMsg?.image || (userUploadedMsg?.images && userUploadedMsg.images[0]) || '';
         let originalImageToUse = priorImgUrl || uploadedUrl || undefined;
         if (originalImageToUse && originalImageToUse.startsWith('data:image')) {
           try {
@@ -3916,7 +3937,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
           operation: isEdit ? 'edit' : 'generate',
           title: isEdit ? 'تعديل موضعي دقيق' : 'إنشاء بصري فائق الدقة',
           description: isEdit ? 'تم تطبيق التعديلات البصرية المطلوبة بنجاح' : 'تم تخطيط المشهد العصبي بنجاح',
-          prompt: lastUserText,
+          prompt: pureUserText,
           seed: priorSeed,
           originalImage: originalImageToUse,
           aspectRatio: priorImg?.aspectRatio || '1:1',
