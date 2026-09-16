@@ -2641,6 +2641,7 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     model = 'fathom-quant-3',
     isMatanyMode = false,
     deepSearch = false,
+    activeMcps = [],
     temperature = 0.85,
     memoryPrompt = '',
     targetUrl: explicitTargetUrl = '',
@@ -3080,7 +3081,9 @@ app.post('/api/chat', async (req: Request, res: Response) => {
     if (isImageOrSvgIntent) {
       willSearch = false;
     } else {
+      const isMcpSearchActive = Array.isArray(activeMcps) && (activeMcps.includes('brave') || activeMcps.includes('web_search'));
       willSearch = Boolean(deepSearch) ||
+        isMcpSearchActive ||
         dynamicTuning.detectedIntent === 'FACTUAL_SEARCH_AND_REALTIME_GROUNDING' ||
         Boolean(dynamicTuning.extractedSearchContext?.shouldSearch);
     }
@@ -3102,10 +3105,12 @@ app.post('/api/chat', async (req: Request, res: Response) => {
 - استند إلى أداة البحث في الويب لاستخلاص الملامح البصرية الدقيقة، الألوان الواقعية، والخصائص البصرية.
 - قم فوراً بترجمة كافة المعلومات المستخلصة من البحث إلى كود SVG نقي متقن داخل \`\`\`svg ... \`\`\` بدقة 2K / 4K.` : `
 [توجيه استخبارات البحث الحي وحسم الحقائق — FATHOM SEARCH & REAL-TIME WEB GROUNDING DIRECTIVE]:
-- تم تفعيل أداة البحث في الويب الرسمية (openrouter:web_search) لك من خلال المنظومة.
-- في خطوات تفكيرك الداخلي <think>، استند 100% إلى الحقائق والمصادر الحية المسترجعة لحسم أي وقائع أو أسعار أو أحداث لعام 2026 بدقة قطعية.
-- حظر التخمين والهلوسة (Strict Anti-Hallucination): يُحظر تماماً التخمين الافتراضي أو إنكار الوقائع المذكورة في المصادر الحية المسترجعة.
-- قدّم الإجابة باللغة العربية الفصحى مباشرة مع ذكر روابط وتواريخ المصادر المعتمدة.`;
+- تم تفعيل أداة البحث في الويب الرسمية لك من خلال المنظومة.
+- في خطوات تفكيرك الداخلي <think>، استند 100% إلى الحقائق والمصادر الحية المسترجعة لحسم أي وقائع أو نتائج مباريات أو أسعار أو أحداث لعام 2026 بدقة قطعية.
+- حظر التخمين والهلوسة ورفض الإجابة وطلب الإذن (Strict Anti-Hallucination, Anti-Refusal & Zero Tool-Syntax Leaks):
+  * يُحظر تماماً أن تسأل المستخدم إن كان يريد منك تنفيذ البحث (مثل: "هل تريد أن أنفذ البحث الحي الآن؟")!
+  * يُحظر تماماً كتابة استعلامات أو أكواد بحث في الرد النهائي مثل \`brave_web_search\` أو مطالبتها للمستخدم!
+  * قدّم الإجابة المحدثة والنهائية والنتائج الرياضية المباشرة فوراً للمستخدم باللغة العربية الفصحى مع التوثيق الموثوق.`;
 
       activeSystemPrompt += `\n\n${fathomSearchGuidance}`;
     }

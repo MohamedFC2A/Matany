@@ -39,7 +39,9 @@ const INTENT_RULES: IntentRule[] = [
     complexity: 'DEEP_CYBER',
     patterns: [
       /(سعر|اسعار|كم\s*سعر|كم\s*يبلغ\s*سعر|ثمن|تكلفه|دولار|يورو|ريال|جنيه|(?:سعر|اسعار|عيار|اونصة|أونصة|سبائك|سبيكة|جرام)\s+(?:ال)?ذهب|فضه|عملات|بورصه|اسهم|تداول|بيتكوين|كريبتو|الطقس|درجه\s*الحراره|مباراه\s*اليوم|نتائج\s*المباريات)/i,
-      /\b(price|prices|how\s+much\s+is|cost\s+of|weather|temperature|stock|stocks|nasdaq|crypto|bitcoin|btc|eth|exchange\s+rate|gold\s+price|live\s+score|match\s+result)\b/i
+      /(?:اخر|آخر|أحدث|موعد|ميعاد|توقيت|نتيجة|نتائج|جدول|اهداف|أهداف|ملخص|تشكيلة|تشكيل)\s*(?:مباراة|مباراه|ماتش|لقاء|مواجهة|مواجهه)/i,
+      /(?:مباراة|مباراه|ماتش|دوري|كأس|كاس|ابطال|أبطال|نادي|فريق)\s+(?:مع\s+)?(?:كريستيانو|رونالدو|ميسي|صلاح|النصر|الهلال|الاتحاد|الأهلي|الاهلي|الزمالك|ريال\s*مدريد|برشلونة|برشلونه|ليفربول|مانشستر|السيتي|يونايتد|ارسنال|أرسنال|بايرن|باريس)/i,
+      /\b(price|prices|how\s+much\s+is|cost\s+of|weather|temperature|stock|stocks|nasdaq|crypto|bitcoin|btc|eth|exchange\s+rate|gold\s+price|live\s+score|match\s+result|last\s+match|next\s+match|ronaldo\s+match|messi\s+match|al-nassr\s+match)\b/i
     ]
   },
   {
@@ -49,7 +51,7 @@ const INTENT_RULES: IntentRule[] = [
     priority: 'urgent',
     complexity: 'DEEP_CYBER',
     patterns: [
-      /(اخر\s*اخبار|احدث\s*اخبار|اخبار\s*اليوم|حدث\s*اليوم|الان|عاجل|ماذا\s*حدث|مستجدات|احدث\s*تطورات|بيان\s*رسمي|صفقه|زلزال|حرب|مؤتمر|الحالي|الحاليه|الحالية|دلوقتي|آخر\s*ظهور|اخر\s*ظهور|مظهره\s*الحالي|شكله\s*الحالي|لونه\s*الحالي|لون\s*شعره|قصة\s*شعر|نيولوك|فريقه\s*الحالي|وضعه\s*الحالي)/i,
+      /(اخر\s*اخبار|احدث\s*اخبار|اخبار\s*اليوم|حدث\s*اليوم|الان|عاجل|ماذا\s*حدث|مستجدات|احدث\s*تطورات|بيان\s*رسمي|صفقه|زلزال|حرب|مؤتمر|الحالي|الحاليه|الحالية|دلوقتي|آخر\s*ظهور|اخر\s*ظهور|مظهره\s*الحالي|شكله\s*الحالي|لونه\s*الحالي|لون\s*شعره|قصة\s*شعر|نيولوك|فريقه\s*الحالي|وضعه\s*الحالي|اخر\s*مباراة|آخر\s*مباراة|اخر\s*مباراه|آخر\s*مباراه)/i,
       /\b(latest\s+news|breaking\s+news|today's\s+news|happened\s+today|current\s+events|recent\s+updates|just\s+announced|press\s+release|current\s+look|current\s+hair|latest\s+appearance|current\s+team|current\s+status)\b/i
     ]
   },

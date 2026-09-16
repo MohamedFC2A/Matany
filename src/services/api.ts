@@ -16,6 +16,7 @@ export interface SendMessageOptions {
   memoryPrompt?: string;
   targetUrl?: string;
   targetUrls?: string[];
+  activeMcps?: string[];
   chatId?: string | null;
   userId?: string | null;
   deviceId?: string;
@@ -33,6 +34,7 @@ export async function streamChatCompletion({
   memoryPrompt = '',
   targetUrl = '',
   targetUrls = [],
+  activeMcps = [],
   chatId,
   userId,
   deviceId,
@@ -240,6 +242,7 @@ export async function streamChatCompletion({
       memoryPrompt,
       targetUrl: effectiveTargetUrl,
       targetUrls: targetUrls && targetUrls.length > 0 ? targetUrls : undefined,
+      activeMcps: activeMcps && activeMcps.length > 0 ? activeMcps : undefined,
       chatId: chatId || undefined,
       userId: userId || undefined,
       deviceId: deviceId || undefined,

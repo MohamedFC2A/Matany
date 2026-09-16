@@ -786,24 +786,28 @@ ${JSON.stringify(cardData, null, 2)}
     let mcpPromptInstruction = talabatPromptInstruction;
 
     if (isGitHubMcpEffective) {
-      mcpPromptInstruction += `\n\n[AUTHORITATIVE OPENROUTER GITHUB MCP PROTOCOL CONNECTED]:
-Connected via Model Context Protocol (@openrouter/mcp) with tool prefix: 'github_'.
-Active remote tools: github_search_repositories, github_get_file_contents, github_list_issues, github_get_pull_request, github_create_issue.
-Operate as an expert software engineer with direct GitHub repository and codebase visibility according to OpenRouter Agent SDK specification.`;
+      mcpPromptInstruction += `\n\n[AUTHORITATIVE GITHUB MCP PROTOCOL ENGAGED]:
+GitHub engineering context is active.
+- Answer software engineering, repository architecture, and code analysis questions directly, thoroughly, and authoritatively.
+- STRICT PROHIBITION: NEVER output dummy tool call syntax, pseudo-code command blocks, or ask the user for permission to query GitHub. Provide the complete technical guidance immediately.`;
     }
 
     if (isLinearMcpEffective) {
-      mcpPromptInstruction += `\n\n[AUTHORITATIVE OPENROUTER LINEAR MCP PROTOCOL CONNECTED]:
-Connected via Model Context Protocol (@openrouter/mcp) with tool prefix: 'linear_'.
-Active remote tools: linear_search_issues, linear_get_project, linear_create_issue, linear_list_cycles, linear_update_issue.
-Operate as an agile technical lead with direct project issue tracking according to OpenRouter Agent SDK specification.`;
+      mcpPromptInstruction += `\n\n[AUTHORITATIVE LINEAR MCP PROTOCOL ENGAGED]:
+Linear project intelligence is active.
+- Provide direct project planning, issue tracking, and sprint/cycle management insights immediately.
+- STRICT PROHIBITION: NEVER ask for tool execution permission or output dummy tool blocks. Deliver actionable solutions directly.`;
     }
 
-    if (isBraveMcpEffective) {
-      mcpPromptInstruction += `\n\n[AUTHORITATIVE OPENROUTER BRAVE SEARCH MCP PROTOCOL CONNECTED]:
-Connected via Model Context Protocol (@openrouter/mcp) with tool prefix: 'brave_'.
-Active remote tools: brave_web_search, brave_local_search.
-Operate with real-time web intelligence and ground your answers in verified live web citations according to OpenRouter Agent SDK specification.`;
+    if (isBraveMcpEffective || isWebSearchEffective) {
+      mcpPromptInstruction += `\n\n[AUTHORITATIVE LIVE WEB GROUNDING & SEARCH PROTOCOL ENGAGED]:
+Real-time web search and live grounding are active.
+CRITICAL MANDATORY INSTRUCTIONS:
+- Ground all facts, dates, match results, fixtures, scores, prices, and events in verified real-time sources for 2026.
+- You MUST answer the user's question directly, factually, and completely with exact names, dates, and scores.
+- STRICT PROHIBITION: NEVER ask the user if you should perform a search (e.g. "هل تريد أن أنفذ البحث الحي الآن؟")!
+- STRICT PROHIBITION: NEVER output raw tool syntax, function calls, or command blocks (e.g. \`brave_web_search\` or \`web_search\`)!
+- Deliver the final, comprehensive, accurate answer immediately.`;
     }
 
     // For LLM reasoning, pass userMessage cleanly without fake text
@@ -864,7 +868,8 @@ Operate with real-time web intelligence and ground your answers in verified live
       messages: packedMessages,
       model: chosenModel,
       isMatanyMode: isMatanyActive,
-      deepSearch: meta?.deepSearch ?? false,
+      deepSearch: Boolean(meta?.deepSearch || isBraveMcpEffective),
+      activeMcps,
       memoryPrompt: memoryContextPrompt,
       targetUrl: resolvedTargetUrl || undefined,
       targetUrls: meta?.targetUrls || (resolvedTargetUrl ? [resolvedTargetUrl] : undefined),
